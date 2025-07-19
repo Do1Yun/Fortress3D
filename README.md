@@ -1,6 +1,6 @@
 # Fortress3D
 유니티를 개부수는 리포지토리
-<img width="1517" height="1050" alt="image" src="https://github.com/user-attachments/assets/a850ac6c-04d8-47fb-827e-f39a40c99e63" width="50" height="50" />
+<img width="1517" height="1050" alt="image" src="https://github.com/user-attachments/assets/a850ac6c-04d8-47fb-827e-f39a40c99e63" width="10" height="10" />
 
 유니티 버젼 : 2021.3.45f1
 
