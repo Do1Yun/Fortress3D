@@ -7,11 +7,9 @@ using TMPro;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
-    // ============== 상태 정의 ==============
     private enum PlayerState { Moving, AimingVertical, AimingHorizontal, SettingPower, Waiting }
     private PlayerState currentState;
 
-    // ============== 공개 변수 (인스펙터에서 설정) ==============
     [Header("플레이어 설정")]
     public int playerID;
     public float moveSpeed = 5.0f;
@@ -20,6 +18,7 @@ public class PlayerController : MonoBehaviour
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
+    private float currentStamina;
     public Image staminaImage;
 
     [Header("조준 관련")]
@@ -45,22 +44,32 @@ public class PlayerController : MonoBehaviour
     public TextMeshProUGUI timerText;
     public Image timerImage;
 
-    // ============== 내부 변수 ==============
+    // --- 내부 상태 변수 ---
     private CharacterController characterController;
-    private CameraController mainCameraController;
     private Vector3 playerVelocity;
     private float gravityValue = -9.81f;
-    private float currentStamina;
-    private float currentStageTimer;
     private float currentVerticalAngle = 0.0f;
     private float currentLaunchPower;
     private bool isPowerIncreasing = true;
+    private float currentStageTimer;
 
-    // ============== Unity 생명주기 함수 ==============
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
-        mainCameraController = Camera.main.GetComponent<CameraController>();
+    }
+
+    public void StartTurn()
+    {
+        currentStamina = maxStamina;
+        currentState = PlayerState.Moving;
+        UpdateUIForState(currentState);
+        Debug.Log("Player " + playerID + "의 턴 시작! [이동 모드]");
+    }
+
+    public void EndTurn()
+    {
+        currentState = PlayerState.Waiting;
+        UpdateUIForState(currentState);
     }
 
     void Update()
@@ -84,32 +93,10 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ============== 턴 관리 함수 ==============
-    public void StartTurn()
-    {
-        currentStamina = maxStamina;
-        currentState = PlayerState.Moving;
-        UpdateUIForState(currentState);
-
-        if (mainCameraController != null)
-        {
-            mainCameraController.ToggleAimMode(false);
-        }
-        Debug.Log("Player " + playerID + "의 턴 시작! [이동 모드]");
-    }
-
-    public void EndTurn()
-    {
-        currentState = PlayerState.Waiting;
-        UpdateUIForState(currentState);
-    }
-
-    // ============== 상태별 행동 함수 ==============
-    private void HandleMovement()
+    void HandleMovement()
     {
         Transform camTransform = Camera.main.transform;
         if (characterController.isGrounded && playerVelocity.y < 0) playerVelocity.y = 0f;
-
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
         Vector3 moveDirection = (camTransform.forward * v) + (camTransform.right * h);
@@ -126,7 +113,6 @@ public class PlayerController : MonoBehaviour
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDirection, Vector3.up), rotationSpeed * Time.deltaTime);
             }
         }
-
         playerVelocity.y += gravityValue * Time.deltaTime;
         characterController.Move(playerVelocity * Time.deltaTime);
 
@@ -136,13 +122,8 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void EnterFiringMode(PlayerState nextState)
+    void EnterFiringMode(PlayerState nextState)
     {
-        if (currentState == PlayerState.Moving && mainCameraController != null)
-        {
-            mainCameraController.ToggleAimMode(true, turretPivot);
-        }
-
         currentState = nextState;
         currentStageTimer = stageTimeLimit;
         UpdateUIForState(currentState);
@@ -155,7 +136,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleStage(System.Action stageAction, PlayerState nextState, bool isFinalStage = false)
+    void HandleStage(System.Action stageAction, PlayerState nextState, bool isFinalStage = false)
     {
         currentStageTimer -= Time.deltaTime;
         if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
@@ -170,7 +151,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleVerticalAim()
+    void HandleVerticalAim()
     {
         if (Input.GetKey(KeyCode.I)) currentVerticalAngle -= verticalAimSpeed * Time.deltaTime;
         if (Input.GetKey(KeyCode.K)) currentVerticalAngle += verticalAimSpeed * Time.deltaTime;
@@ -178,13 +159,13 @@ public class PlayerController : MonoBehaviour
         cannonBarrel.localEulerAngles = new Vector3(currentVerticalAngle, 0, 0);
     }
 
-    private void HandleHorizontalAim()
+    void HandleHorizontalAim()
     {
         if (Input.GetKey(KeyCode.J)) turretPivot.Rotate(Vector3.up, -horizontalAimSpeed * Time.deltaTime);
         if (Input.GetKey(KeyCode.L)) turretPivot.Rotate(Vector3.up, horizontalAimSpeed * Time.deltaTime);
     }
 
-    private void HandlePowerSetting()
+    void HandlePowerSetting()
     {
         if (isPowerIncreasing)
         {
@@ -201,9 +182,9 @@ public class PlayerController : MonoBehaviour
         if (powerText != null) powerText.text = $"Power: {currentLaunchPower:F0}";
     }
 
-    private void Fire(float finalLaunchPower)
+    void Fire(float finalLaunchPower)
     {
-        EndTurn(); // 턴 종료 및 UI 정리
+        EndTurn(); 
 
         if (projectilePrefab == null || firePoint == null) return;
         Debug.LogFormat("Player {0} 발사! (파워: {1})", playerID, finalLaunchPower);
@@ -213,10 +194,8 @@ public class PlayerController : MonoBehaviour
         GameManager.instance.SwitchToNextTurn();
     }
     
-    // ============== UI 관리 함수 ==============
-    private void UpdateUIForState(PlayerState state)
+    void UpdateUIForState(PlayerState state)
     {
-        // 모든 UI 비활성화로 초기화
         if (staminaImage != null) staminaImage.gameObject.SetActive(false);
         if (statusText != null) statusText.gameObject.SetActive(false);
         if (timerText != null) timerText.gameObject.SetActive(false);
@@ -224,7 +203,6 @@ public class PlayerController : MonoBehaviour
         if (powerImage != null) powerImage.gameObject.SetActive(false);
         if (powerText != null) powerText.gameObject.SetActive(false);
 
-        // 현재 상태에 필요한 UI만 활성화
         switch (state)
         {
             case PlayerState.Moving:
