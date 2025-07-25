@@ -164,14 +164,26 @@ MonoBehaviour:
   playerID: 0
   moveSpeed: 5
   rotationSpeed: 10
-  turretPivot: {fileID: 0}
-  cannonBarrel: {fileID: 0}
+  maxStamina: 100
+  staminaDrainRate: 20
+  staminaImage: {fileID: 0}
+  turretPivot: {fileID: 912086195364612248}
+  cannonBarrel: {fileID: 912086193986228789}
   firePoint: {fileID: 3545065917352415073}
-  aimSensitivity: 2
+  verticalAimSpeed: 20
+  horizontalAimSpeed: 30
   maxAimAngle: 60
   minAimAngle: -10
   projectilePrefab: {fileID: 7999235287928038026, guid: aecb4d882814f71479315d824d7913c7, type: 3}
-  launchPower: 50
+  minLaunchPower: 10
+  maxLaunchPower: 50
+  powerGaugeSpeed: 30
+  powerImage: {fileID: 0}
+  powerText: {fileID: 0}
+  stageTimeLimit: 5
+  statusText: {fileID: 0}
+  timerText: {fileID: 0}
+  timerImage: {fileID: 0}
 --- !u!1 &912086193986228786
 GameObject:
   m_ObjectHideFlags: 0
