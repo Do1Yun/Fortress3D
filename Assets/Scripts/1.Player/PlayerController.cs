@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     public float horizontalAimSpeed = 30f;
     public float maxAimAngle = 45.0f;
     public float minAimAngle = -20.0f;
+    public Vector3 moveDirection;
 
     [Header("발사 관련")]
     public GameObject projectilePrefab;
@@ -99,7 +100,7 @@ public class PlayerController : MonoBehaviour
         if (characterController.isGrounded && playerVelocity.y < 0) playerVelocity.y = 0f;
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
-        Vector3 moveDirection = (camTransform.forward * v) + (camTransform.right * h);
+        moveDirection = (camTransform.forward * v) + (camTransform.right * h);
         moveDirection.y = 0;
         moveDirection.Normalize();
 
@@ -242,5 +243,13 @@ public class PlayerController : MonoBehaviour
                 if (powerText != null) powerText.gameObject.SetActive(true);
                 break;
         }
+    }
+
+    public bool isSetting()
+    {
+        if (currentState == PlayerState.SettingPower) return true;
+        else if (currentState == PlayerState.AimingHorizontal) return true;
+        else if (currentState == PlayerState.AimingVertical) return true;
+        else return false;
     }
 }
