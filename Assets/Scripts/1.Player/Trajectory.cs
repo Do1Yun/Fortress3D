@@ -5,16 +5,18 @@ using UnityEngine;
 public class Trajectory : MonoBehaviour
 {
     public PlayerController playercontrol;
-    public Transform firePoint;    // 포탄 발사 위치
     public Vector3 launchVelocity; // 발사 속도 (방향 + 세기)
     public int resolution = 30;    // 라인에 그릴 점 개수
     public float timeStep = 0.1f;  // 점 간격 시간
 
+    private Transform firePoint;    // 포탄 발사 위치
     private LineRenderer lr;
 
     void Awake()
     {
         lr = GetComponent<LineRenderer>();
+        if (playercontrol != null)
+            firePoint = playercontrol.firePoint;
     }
 
     // Update is called once per frame
