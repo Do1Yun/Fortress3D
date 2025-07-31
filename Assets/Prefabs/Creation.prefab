@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 4555198470806297287}
   - component: {fileID: 1771300846374723506}
   m_Layer: 0
-  m_Name: Bullet
+  m_Name: Creation
   m_TagString: Projectile
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -64,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b6fe567ed80e99147ba33e49e1c5ced4, type: 2}
+  - {fileID: 2100000, guid: fad0f98ec75d0614d820f0a6c56a981f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -127,7 +127,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdbe3a3ef3abe4c4e987a813098cd4d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  type: 2
   lifeTime: 5
   explosionRadius: 5
-  terrainModificationStrength: 1
   explosionEffectPrefab: {fileID: 0}
+  terrainModificationStrength: 1
+  explosionForce: 500

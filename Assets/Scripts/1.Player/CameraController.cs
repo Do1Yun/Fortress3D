@@ -2,64 +2,56 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    // 따라다닐 목표 (플레이어 탱크)
+    public enum CameraMode { Default, SideView, TopDownView }
+    private CameraMode currentMode;
+
     private Transform target;
-    // 조준 시 바라볼 타겟 (포탑)
-    private Transform aimTarget;
 
-    [Header("기본 설정")]
-    public Vector3 offset = new Vector3(0, 3f, -4f);
-    public float smoothSpeed = 5f;
+    [Header("기본 모드 설정")]
+    public Vector3 defaultOffset = new Vector3(0, 5f, -6f);
+    public float defaultSmoothSpeed = 5f;
 
-    [Header("조준 모드 설정")]
-    public Vector3 aimOffset = new Vector3(0f, 3f, -4f); // 조준 시 더 가까운 위치
-    public float aimSmoothSpeed = 10f; // 조준 시 더 빠른 회전 속도
+    [Header("측면(수직 조준) 모드 설정")]
+    public Vector3 sideViewOffset = new Vector3(-5f, 2f, 0f);
+    public float sideViewSmoothSpeed = 10f;
 
-    private bool isAimingMode = false;
+    [Header("탑다운(수평 조준) 모드 설정")]
+    public Vector3 topDownOffset = new Vector3(0f, 10f, 0f);
+    public float topDownSmoothSpeed = 10f;
 
-    // LateUpdate는 모든 Update 함수가 호출된 후에 실행됩니다.
-    // 플레이어가 움직인 '후'에 카메라가 따라가야 렉이나 떨림이 없으므로
-    // 카메라 이동은 LateUpdate에서 처리하는 것이 좋습니다.
     void LateUpdate()
     {
-        // 타겟이 설정되지 않았다면 아무것도 하지 않음
-        if (target == null)
-        {
-            return;
-        }
+        if (target == null) return;
 
-        // 현재 모드에 맞는 오프셋과 속도를 선택
-        Vector3 currentOffset = isAimingMode ? aimOffset : offset;
-        float currentSpeed = isAimingMode ? aimSmoothSpeed : smoothSpeed;
-
-        // 1. 위치 이동
-        Vector3 desiredPosition = target.position + currentOffset;
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, currentSpeed * Time.deltaTime);
-
-        // 2. 회전 방식 변경
-        if (isAimingMode && aimTarget != null)
+        switch (currentMode)
         {
-            // 조준 모드: 카메라의 방향을 포탑의 방향으로 부드럽게 일치시킴
-            Quaternion desiredRotation = Quaternion.LookRotation(aimTarget.forward);
-            transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, currentSpeed * Time.deltaTime);
-        }
-        else
-        {
-            // 기본 모드: 플레이어의 몸체를 바라봄
-            transform.LookAt(target);
+            case CameraMode.Default:
+                Vector3 desiredPosDefault = target.position + target.rotation * defaultOffset;
+                transform.position = Vector3.Lerp(transform.position, desiredPosDefault, defaultSmoothSpeed * Time.deltaTime);
+                transform.LookAt(target);
+                break;
+
+            case CameraMode.SideView:
+                Vector3 desiredPosSide = target.position + (target.right * sideViewOffset.x) + (Vector3.up * sideViewOffset.y) + (target.forward * sideViewOffset.z);
+                transform.position = Vector3.Lerp(transform.position, desiredPosSide, sideViewSmoothSpeed * Time.deltaTime);
+                transform.LookAt(target.position + Vector3.up * 1.5f);
+                break;
+
+            case CameraMode.TopDownView:
+                Vector3 desiredPosTop = target.position + topDownOffset;
+                transform.position = Vector3.Lerp(transform.position, desiredPosTop, topDownSmoothSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(90, target.eulerAngles.y, 0), topDownSmoothSpeed * Time.deltaTime);
+                break;
         }
     }
 
-    // 모드 전환을 위한 함수
-    public void ToggleAimMode(bool isAiming, Transform newAimTarget = null)
-    {
-        isAimingMode = isAiming;
-        aimTarget = newAimTarget;
-    }
-
-    // GameManager가 호출할 함수: 따라다닐 타겟을 변경합니다.
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+    }
+
+    public void SwitchMode(CameraMode mode)
+    {
+        currentMode = mode;
     }
 }
