@@ -128,3 +128,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lifeTime: 5
+  explosionRadius: 5
+  terrainModificationStrength: 1
+  explosionEffectPrefab: {fileID: 0}

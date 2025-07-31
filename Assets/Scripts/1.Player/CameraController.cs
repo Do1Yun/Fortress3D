@@ -8,11 +8,11 @@ public class CameraController : MonoBehaviour
     private Transform aimTarget;
 
     [Header("기본 설정")]
-    public Vector3 offset = new Vector3(0, 10f, -8f);
+    public Vector3 offset = new Vector3(0, 3f, -4f);
     public float smoothSpeed = 5f;
 
     [Header("조준 모드 설정")]
-    public Vector3 aimOffset = new Vector3(2f, 7f, -3f); // 조준 시 더 가까운 위치
+    public Vector3 aimOffset = new Vector3(0f, 3f, -4f); // 조준 시 더 가까운 위치
     public float aimSmoothSpeed = 10f; // 조준 시 더 빠른 회전 속도
 
     private bool isAimingMode = false;
