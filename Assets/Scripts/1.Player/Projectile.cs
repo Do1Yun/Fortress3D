@@ -1,16 +1,90 @@
 using UnityEngine;
 
+public enum ProjectileType
+{
+    NormalImpact,
+    TerrainDestruction,
+    TerrainCreation
+}
+
 public class Projectile : MonoBehaviour
 {
-    // 인스펙터 창에서 포탄의 생존 시간을 설정할 수 있습니다.
+    [Header("포탄 공통 설정")]
+    public ProjectileType type;
     public float lifeTime = 5.0f;
+    public float explosionRadius = 5.0f;
+    public GameObject explosionEffectPrefab;
 
-    // 오브젝트가 생성될 때(Instantiate) 한 번만 호출되는 함수입니다.
+    [Header("타입별 설정")]
+    public float terrainModificationStrength = 2.0f;
+    public float explosionForce = 500f;
+
+    private bool hasExploded = false;
+
     void Start()
     {
-        // lifeTime 변수에 지정된 시간(초)이 지나면 이 게임 오브젝트를 파괴합니다.
         Destroy(gameObject, lifeTime);
     }
-//기본적으로다가 충돌 없으면 사라지는 총알임.
-//이제 여기다가 준상이가 지형삭제 및 생성 함수를 호출하도록 만들면됨
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (hasExploded) return;
+        Vector3 explosionPosition = collision.contacts[0].point;
+        Explode(explosionPosition);
+    }
+
+    void OnDestroy()
+    {
+        // 포탄이 폭발하지 않고 수명이 다해 사라진 경우에도 턴이 넘어가도록 처리
+        if (!hasExploded && GameManager.instance != null && GameManager.instance.currentState == GameManager.GameState.ProjectileFlying)
+        {
+            GameManager.instance.OnProjectileDestroyed();
+        }
+    }
+
+    void Explode(Vector3 explosionPosition)
+    {
+        hasExploded = true;
+        Debug.LogFormat("'{0}' 포탄 폭발! 위치: {1}", type, explosionPosition);
+
+        if (explosionEffectPrefab != null)
+        {
+            Instantiate(explosionEffectPrefab, explosionPosition, Quaternion.identity);
+        }
+
+        switch (type)
+        {
+            case ProjectileType.NormalImpact:
+                Collider[] colliders = Physics.OverlapSphere(explosionPosition, explosionRadius);
+                foreach (Collider hit in colliders)
+                {
+                    Rigidbody rb = hit.GetComponentInParent<Rigidbody>();
+                    if (rb != null)
+                    {
+                        rb.AddExplosionForce(explosionForce, explosionPosition, explosionRadius);
+                    }
+                }
+                break;
+
+            case ProjectileType.TerrainDestruction:
+                if (World.Instance != null)
+                {
+                    World.Instance.ModifyTerrain(explosionPosition, -terrainModificationStrength, explosionRadius);
+                }
+                break;
+
+            case ProjectileType.TerrainCreation:
+                if (World.Instance != null)
+                {
+                    World.Instance.ModifyTerrain(explosionPosition, terrainModificationStrength, explosionRadius);
+                }
+                break;
+        }
+
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.OnProjectileDestroyed();
+        }
+        Destroy(gameObject);
+    }
 }

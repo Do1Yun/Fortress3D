@@ -1,255 +1,309 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
+using System.Linq;
 
-[RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
-    private enum PlayerState { Moving, AimingVertical, AimingHorizontal, SettingPower, Waiting }
+    // 플레이어의 상태를 나타내는 enum 정의
+    public enum PlayerState { SelectingProjectile, Moving, AimingVertical, AimingHorizontal, SettingPower, Waiting, Firing }
     private PlayerState currentState;
 
-    [Header("플레이어 설정")]
+    [Header("플레이어 기본 설정")]
     public int playerID;
-    public float moveSpeed = 5.0f;
-    public float rotationSpeed = 10.0f;
+    public int rerollChances = 3;
 
-    [Header("스테미너 설정")]
-    public float maxStamina = 100f;
-    public float staminaDrainRate = 20f;
-    private float currentStamina;
+    [Header("UI 연결")]
     public Image staminaImage;
-
-    [Header("조준 관련")]
-    public Transform turretPivot;
-    public Transform cannonBarrel;
-    public Transform firePoint;
-    public float verticalAimSpeed = 20f;
-    public float horizontalAimSpeed = 30f;
-    public float maxAimAngle = 45.0f;
-    public float minAimAngle = -20.0f;
-    public Vector3 moveDirection;
-
-    [Header("발사 관련")]
-    public GameObject projectilePrefab;
-    public float minLaunchPower = 10f;
-    public float maxLaunchPower = 50f;
-    public float powerGaugeSpeed = 30f;
     public Image powerImage;
     public TextMeshProUGUI powerText;
-
-    [Header("UI 설정")]
-    public float stageTimeLimit = 5.0f;
     public TextMeshProUGUI statusText;
     public TextMeshProUGUI timerText;
     public Image timerImage;
 
-    // --- 내부 상태 변수 ---
-    private CharacterController characterController;
-    private Vector3 playerVelocity;
-    private float gravityValue = -9.81f;
-    private float currentVerticalAngle = 0.0f;
-    private float currentLaunchPower;
-    private bool isPowerIncreasing = true;
+    [Header("상태별 시간 제한")]
+    public float stageTimeLimit = 5.0f;
+
+    [Header("포탄 선택 UI")]
+    public List<Image> projectileSlotImages;
+    public TextMeshProUGUI rerollCountText;
+
+    [Header("포탄 데이터")]
+    public List<ProjectileData> projectileDatabase;
+    private List<ProjectileData> currentSelection = new List<ProjectileData>();
+    private ProjectileData selectedProjectile;
+
+    // 분할된 기능 스크립트들에 대한 참조
+    private PlayerMovement playerMovement;
+    private PlayerAiming playerAiming;
+    private PlayerShooting playerShooting;
+    public Trajectory trajectory;
+    private CameraController mainCameraController;
+
     private float currentStageTimer;
 
     void Awake()
     {
-        characterController = GetComponent<CharacterController>();
+        playerMovement = GetComponent<PlayerMovement>();
+        playerAiming = GetComponent<PlayerAiming>();
+        playerShooting = GetComponent<PlayerShooting>();
+        trajectory = GetComponent<Trajectory>();
+
+        if (playerMovement == null || playerAiming == null || playerShooting == null)
+        {
+            Debug.LogError("PlayerController에 필요한 기능 스크립트가 모두 할당되지 않았습니다.", this);
+            enabled = false;
+        }
+        if (trajectory == null)
+        {
+            Debug.LogWarning("Trajectory 컴포넌트를 찾을 수 없습니다.", this);
+        }
     }
 
-    public void StartTurn()
+    void Start()
     {
-        currentStamina = maxStamina;
-        currentState = PlayerState.Moving;
-        UpdateUIForState(currentState);
-        Debug.Log("Player " + playerID + "의 턴 시작! [이동 모드]");
-    }
+        mainCameraController = Camera.main.GetComponent<CameraController>();
+        if (mainCameraController == null)
+        {
+            Debug.LogError("씬에 CameraController가 있는 메인 카메라를 찾을 수 없습니다.");
+        }
 
-    public void EndTurn()
-    {
-        currentState = PlayerState.Waiting;
-        UpdateUIForState(currentState);
+        playerMovement.SetUIReferences(staminaImage);
+        playerShooting.SetUIReferences(powerImage, powerText);
     }
 
     void Update()
     {
-        if (currentState == PlayerState.Waiting) return;
+        // Waiting, Firing 상태이거나 이 스크립트가 비활성화 상태일 때는 아무것도 하지 않음
+        if (currentState == PlayerState.Waiting || currentState == PlayerState.Firing) return;
 
+        // 이동 상태가 아닐 때 타이머 작동
+        if (currentState != PlayerState.Moving)
+        {
+            currentStageTimer -= Time.deltaTime;
+            if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
+            if (timerImage != null) timerImage.fillAmount = currentStageTimer / stageTimeLimit;
+
+            if (currentStageTimer <= 0)
+            {
+                TransitionToNextStage(true);
+                return;
+            }
+        }
+
+        // 상태별 로직 처리
         switch (currentState)
         {
             case PlayerState.Moving:
-                HandleMovement();
+                playerMovement.HandleMovement();
+                if (trajectory != null) trajectory.HideTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
+                {
+                    TransitionToNextStage(false);
+                }
+                break;
+            case PlayerState.SelectingProjectile:
+                HandleProjectileSelection();
                 break;
             case PlayerState.AimingVertical:
-                HandleStage(HandleVerticalAim, PlayerState.AimingHorizontal);
+                playerAiming.HandleVerticalAim();
+                if (trajectory != null) trajectory.ShowTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.AimingHorizontal:
-                HandleStage(HandleHorizontalAim, PlayerState.SettingPower);
+                playerAiming.HandleHorizontalAim();
+                if (trajectory != null) trajectory.ShowTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.SettingPower:
-                HandleStage(HandlePowerSetting, PlayerState.Waiting, true);
+                playerShooting.HandlePowerSetting();
+                if (trajectory != null) trajectory.ShowTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
                 break;
         }
     }
 
-    void HandleMovement()
+    public void StartTurn()
     {
-        Transform camTransform = Camera.main.transform;
-        if (characterController.isGrounded && playerVelocity.y < 0) playerVelocity.y = 0f;
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
-        moveDirection = (camTransform.forward * v) + (camTransform.right * h);
-        moveDirection.y = 0;
-        moveDirection.Normalize();
+        playerMovement.ResetStamina();
+        SetPlayerState(PlayerState.Moving);
+        Debug.Log($"Player {playerID}의 턴 시작! [이동 모드]");
+    }
 
-        if (moveDirection.magnitude > 0.1f && currentStamina > 0)
+    public void EndTurn()
+    {
+        SetPlayerState(PlayerState.Waiting);
+        Debug.Log($"Player {playerID}의 턴 종료!");
+    }
+
+    void SetPlayerState(PlayerState newState)
+    {
+        if (currentState == newState) return;
+        currentState = newState;
+        Debug.Log($"Player {playerID} 상태 변경: {newState}");
+
+        UpdateUIForState(currentState);
+
+        if (newState != PlayerState.Moving)
         {
-            characterController.Move(moveDirection * moveSpeed * Time.deltaTime);
-            currentStamina -= staminaDrainRate * Time.deltaTime;
-            if (staminaImage != null) staminaImage.fillAmount = currentStamina / maxStamina;
-            if (moveDirection != Vector3.zero)
+            currentStageTimer = stageTimeLimit;
+        }
+
+        if (mainCameraController != null)
+        {
+            mainCameraController.SetTarget(this.transform);
+            switch (newState)
             {
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDirection, Vector3.up), rotationSpeed * Time.deltaTime);
+                case PlayerState.Moving:
+                case PlayerState.SelectingProjectile:
+                    mainCameraController.SwitchMode(CameraController.CameraMode.Default);
+                    break;
+                case PlayerState.AimingVertical:
+                    mainCameraController.SwitchMode(CameraController.CameraMode.SideView);
+                    break;
+                case PlayerState.AimingHorizontal:
+                case PlayerState.SettingPower:
+                    mainCameraController.SwitchMode(CameraController.CameraMode.TopDownView);
+                    break;
+                case PlayerState.Firing:
+                case PlayerState.Waiting:
+                    mainCameraController.SwitchMode(CameraController.CameraMode.Default);
+                    break;
             }
         }
-        playerVelocity.y += gravityValue * Time.deltaTime;
-        characterController.Move(playerVelocity * Time.deltaTime);
-
-        if (currentStamina <= 0)
-        {
-            EnterFiringMode(PlayerState.AimingVertical);
-        }
     }
 
-    void EnterFiringMode(PlayerState nextState)
+    void TransitionToNextStage(bool isTimedOut)
     {
-        currentState = nextState;
-        currentStageTimer = stageTimeLimit;
-        UpdateUIForState(currentState);
-        Debug.LogFormat("발사 모드 진입: [{0}]", nextState);
-
-        if (nextState == PlayerState.SettingPower)
-        {
-            currentLaunchPower = minLaunchPower;
-            isPowerIncreasing = true;
-        }
-    }
-
-    void HandleStage(System.Action stageAction, PlayerState nextState, bool isFinalStage = false)
-    {
-        currentStageTimer -= Time.deltaTime;
-        if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
-        if (timerImage != null) timerImage.fillAmount = currentStageTimer / stageTimeLimit;
-
-        stageAction();
-
-        if (currentStageTimer <= 0 || Input.GetKeyDown(KeyCode.Space))
-        {
-            if (isFinalStage) Fire(currentLaunchPower);
-            else EnterFiringMode(nextState);
-        }
-    }
-
-    void HandleVerticalAim()
-    {
-        if (Input.GetKey(KeyCode.I)) currentVerticalAngle -= verticalAimSpeed * Time.deltaTime;
-        if (Input.GetKey(KeyCode.K)) currentVerticalAngle += verticalAimSpeed * Time.deltaTime;
-        currentVerticalAngle = Mathf.Clamp(currentVerticalAngle, minAimAngle, maxAimAngle);
-        cannonBarrel.localEulerAngles = new Vector3(currentVerticalAngle, 0, 0);
-    }
-
-    void HandleHorizontalAim()
-    {
-        if (Input.GetKey(KeyCode.J)) turretPivot.Rotate(Vector3.up, -horizontalAimSpeed * Time.deltaTime);
-        if (Input.GetKey(KeyCode.L)) turretPivot.Rotate(Vector3.up, horizontalAimSpeed * Time.deltaTime);
-    }
-
-    void HandlePowerSetting()
-    {
-        if (isPowerIncreasing)
-        {
-            currentLaunchPower += powerGaugeSpeed * Time.deltaTime;
-            if (currentLaunchPower >= maxLaunchPower) isPowerIncreasing = false;
-        }
-        else
-        {
-            currentLaunchPower -= powerGaugeSpeed * Time.deltaTime;
-            if (currentLaunchPower <= minLaunchPower) isPowerIncreasing = true;
-        }
-
-        if (powerImage != null) powerImage.fillAmount = (currentLaunchPower - minLaunchPower) / (maxLaunchPower - minLaunchPower);
-        if (powerText != null) powerText.text = $"Power: {currentLaunchPower:F0}";
-    }
-
-    void Fire(float finalLaunchPower)
-    {
-        EndTurn(); 
-
-        if (projectilePrefab == null || firePoint == null) return;
-        Debug.LogFormat("Player {0} 발사! (파워: {1})", playerID, finalLaunchPower);
-        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-        Rigidbody rb = projectile.GetComponent<Rigidbody>();
-        if (rb != null) rb.AddForce(firePoint.forward * finalLaunchPower, ForceMode.Impulse);
-        GameManager.instance.SwitchToNextTurn();
-    }
-    
-    void UpdateUIForState(PlayerState state)
-    {
-        if (staminaImage != null) staminaImage.gameObject.SetActive(false);
-        if (statusText != null) statusText.gameObject.SetActive(false);
-        if (timerText != null) timerText.gameObject.SetActive(false);
-        if (timerImage != null) timerImage.gameObject.SetActive(false);
-        if (powerImage != null) powerImage.gameObject.SetActive(false);
-        if (powerText != null) powerText.gameObject.SetActive(false);
-
-        switch (state)
+        switch (currentState)
         {
             case PlayerState.Moving:
-                if (staminaImage != null)
+                GenerateProjectileSelection();
+                SetPlayerState(PlayerState.SelectingProjectile);
+                break;
+            case PlayerState.SelectingProjectile:
+                if (isTimedOut)
                 {
-                    staminaImage.gameObject.SetActive(true);
-                    staminaImage.fillAmount = currentStamina / maxStamina;
+                    SelectProjectile(0, false);
                 }
+                SetPlayerState(PlayerState.AimingVertical);
                 break;
             case PlayerState.AimingVertical:
-                if (timerImage != null) timerImage.gameObject.SetActive(true);
-                if (timerText != null) timerText.gameObject.SetActive(true);
-                if (statusText != null)
-                {
-                    statusText.gameObject.SetActive(true);
-                    statusText.text = "Vertical Aim";
-                }
+                SetPlayerState(PlayerState.AimingHorizontal);
                 break;
             case PlayerState.AimingHorizontal:
-                if (timerImage != null) timerImage.gameObject.SetActive(true);
-                if (timerText != null) timerText.gameObject.SetActive(true);
-                if (statusText != null)
-                {
-                    statusText.gameObject.SetActive(true);
-                    statusText.text = "Horizontal Aim";
-                }
+                playerShooting.ResetPowerGauge();
+                SetPlayerState(PlayerState.SettingPower);
                 break;
             case PlayerState.SettingPower:
-                if (timerImage != null) timerImage.gameObject.SetActive(true);
-                if (timerText != null) timerText.gameObject.SetActive(true);
-                if (statusText != null)
-                {
-                    statusText.gameObject.SetActive(true);
-                    statusText.text = "Set Power";
-                }
-                if (powerImage != null) powerImage.gameObject.SetActive(true);
-                if (powerText != null) powerText.gameObject.SetActive(true);
+                playerShooting.Fire();
+                SetPlayerState(PlayerState.Firing);
                 break;
         }
     }
 
-    public bool isSetting()
+    void HandleProjectileSelection()
     {
-        if (currentState == PlayerState.SettingPower) return true;
-        else if (currentState == PlayerState.AimingHorizontal) return true;
-        else if (currentState == PlayerState.AimingVertical) return true;
-        else return false;
+        if (Input.GetKeyDown(KeyCode.Alpha1)) SelectProjectile(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) SelectProjectile(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) SelectProjectile(2);
+
+        if (Input.GetKeyDown(KeyCode.R) && rerollChances > 0)
+        {
+            rerollChances--;
+            GenerateProjectileSelection();
+        }
     }
+
+    void GenerateProjectileSelection()
+    {
+        currentSelection.Clear();
+        if (projectileDatabase.Count == 0)
+        {
+            Debug.LogError("Projectile Database가 비어있습니다!");
+            return;
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            int randomIndex = Random.Range(0, projectileDatabase.Count);
+            currentSelection.Add(projectileDatabase[randomIndex]);
+        }
+        UpdateProjectileSelectionUI();
+    }
+
+    void SelectProjectile(int index, bool transition = true)
+    {
+        if (index < 0 || index >= currentSelection.Count) return;
+
+        selectedProjectile = currentSelection[index];
+        Debug.Log($"Player {playerID}가 '{selectedProjectile.type}' 포탄을 선택했습니다.");
+
+        playerShooting.SetProjectile(selectedProjectile.prefab);
+
+        if (transition)
+        {
+            TransitionToNextStage(false);
+        }
+    }
+
+    void UpdateProjectileSelectionUI()
+    {
+        for (int i = 0; i < projectileSlotImages.Count; i++)
+        {
+            if (i < currentSelection.Count)
+            {
+                projectileSlotImages[i].gameObject.SetActive(true);
+                projectileSlotImages[i].sprite = currentSelection[i].icon;
+            }
+            else
+            {
+                projectileSlotImages[i].gameObject.SetActive(false);
+            }
+        }
+        if (rerollCountText != null) rerollCountText.text = $"Reroll: {rerollChances}";
+    }
+
+    void UpdateUIForState(PlayerState state)
+    {
+        bool isMoving = state == PlayerState.Moving;
+        bool isSelecting = state == PlayerState.SelectingProjectile;
+        bool isAimingOrPower = state == PlayerState.AimingVertical || state == PlayerState.AimingHorizontal || state == PlayerState.SettingPower;
+
+        if (staminaImage != null && staminaImage.transform.parent != null) staminaImage.transform.parent.gameObject.SetActive(isMoving);
+        if (timerImage != null && timerImage.transform.parent != null) timerImage.transform.parent.gameObject.SetActive(isAimingOrPower || isSelecting);
+        if (powerImage != null && powerImage.transform.parent != null) powerImage.transform.parent.gameObject.SetActive(state == PlayerState.SettingPower);
+
+        foreach (var img in projectileSlotImages)
+        {
+            if (img != null) img.gameObject.SetActive(isSelecting);
+        }
+        if (rerollCountText != null) rerollCountText.gameObject.SetActive(isSelecting);
+
+        if (statusText != null)
+        {
+            statusText.gameObject.SetActive(true);
+            statusText.text = state.ToString();
+        }
+    }
+
+    public bool IsAimingOrSettingPower()
+    {
+        return currentState == PlayerState.AimingVertical ||
+               currentState == PlayerState.AimingHorizontal ||
+               currentState == PlayerState.SettingPower;
+    }
+
+    public float GetCurrentLaunchPower()
+    {
+        return playerShooting.GetCurrentLaunchPower();
+    }
+}
+
+[System.Serializable]
+public class ProjectileData
+{
+    public ProjectileType type;
+    public GameObject prefab;
+    public Sprite icon;
 }

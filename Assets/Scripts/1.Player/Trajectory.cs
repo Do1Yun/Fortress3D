@@ -1,47 +1,98 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(LineRenderer))]
 public class Trajectory : MonoBehaviour
 {
-    public PlayerController playercontrol;
-    public Vector3 launchVelocity; // ¹ß»ç ¼Óµµ (¹æÇâ + ¼¼±â)
-    public int resolution = 30;    // ¶óÀÎ¿¡ ±×¸± Á¡ °³¼ö
-    public float timeStep = 0.1f;  // Á¡ °£°Ý ½Ã°£
+    public PlayerController playerControl;
+    public PlayerShooting playerShooting;
 
-    private Transform firePoint;    // Æ÷Åº ¹ß»ç À§Ä¡
+    [Header("ì¡°ì¤€ì„  ì„¤ì •")]
+    public int resolution = 30;
+    public float maxTime = 2.0f;
+    public Gradient lineColor;
+
+    private float timeStep;
+    private Transform firePoint;
     private LineRenderer lr;
+    private WindZone currentWindZone;
 
     void Awake()
     {
         lr = GetComponent<LineRenderer>();
-        if (playercontrol != null)
-            firePoint = playercontrol.firePoint;
+        lr.colorGradient = lineColor;
+        timeStep = maxTime / resolution;
+
+        if (playerControl == null || playerShooting == null)
+        {
+            enabled = false;
+            return;
+        }
+
+        firePoint = playerShooting.firePoint;
+
+        currentWindZone = FindObjectOfType<WindZone>();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void ShowTrajectory()
     {
-        launchVelocity = firePoint.forward * (playercontrol.minLaunchPower + playercontrol.maxLaunchPower) / 2;
-        if (playercontrol.isSetting())
-        {
-            lr.enabled = true;
-            DrawTrajectory();
-        }
-        else
-            lr.enabled = false;
+        if (!enabled || lr == null) return;
+        lr.enabled = true;
+        DrawTrajectory();
+    }
+
+    public void HideTrajectory()
+    {
+        if (lr == null) return;
+        lr.enabled = false;
     }
 
     void DrawTrajectory()
     {
         Vector3[] points = new Vector3[resolution];
         Vector3 startPosition = firePoint.position;
-        Vector3 velocity = launchVelocity;
+
+        float currentPower = playerShooting.GetCurrentLaunchPower();
+        Vector3 initialVelocity = firePoint.forward * currentPower;
+
+        Vector3 gravity = Physics.gravity;
+        Vector3 windForce = Vector3.zero;
+
+        if (currentWindZone != null)
+        {
+            float projectileMass = 1.0f;
+            GameObject currentPrefab = playerShooting.GetCurrentProjectilePrefab();
+            if (currentPrefab != null)
+            {
+                Rigidbody projRb = currentPrefab.GetComponent<Rigidbody>();
+                if (projRb != null)
+                {
+                    projectileMass = projRb.mass;
+                }
+            }
+
+            if (projectileMass > 0)
+            {
+                Vector3 windVector = currentWindZone.windDirection.normalized * currentWindZone.windStrength;
+                windForce = windVector / projectileMass;
+            }
+        }
 
         for (int i = 0; i < resolution; i++)
         {
             float t = i * timeStep;
-            points[i] = startPosition + velocity * t + 0.5f * Physics.gravity * t * t;
+            Vector3 totalAcceleration = gravity + windForce;
+            points[i] = startPosition + initialVelocity * t + 0.5f * totalAcceleration * t * t;
+
+            if (i > 0)
+            {
+                if (Physics.Linecast(points[i - 1], points[i], out RaycastHit hit, LayerMask.GetMask("Ground")))
+                {
+                    points[i] = hit.point;
+                    lr.positionCount = i + 1;
+                    lr.SetPositions(points);
+                    return;
+                }
+            }
         }
 
         lr.positionCount = resolution;

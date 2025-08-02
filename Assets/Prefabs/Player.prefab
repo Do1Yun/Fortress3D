@@ -107,7 +107,11 @@ GameObject:
   m_Component:
   - component: {fileID: 912086193924953051}
   - component: {fileID: 912086193924953053}
-  - component: {fileID: 912086193924953050}
+  - component: {fileID: 5802671009450944809}
+  - component: {fileID: 2059601108055946889}
+  - component: {fileID: 1384350807087265530}
+  - component: {fileID: 4144193411543819691}
+  - component: {fileID: 1144702427263277220}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -149,7 +153,26 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.3, z: 0}
---- !u!114 &912086193924953050
+--- !u!114 &5802671009450944809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 912086193924953049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f95559377b0f7cb459b35b56d300f694, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  turretPivot: {fileID: 0}
+  cannonBarrel: {fileID: 0}
+  verticalAimSpeed: 20
+  horizontalAimSpeed: 30
+  maxAimAngle: 45
+  minAimAngle: -20
+  currentVerticalAngle: 0
+--- !u!114 &2059601108055946889
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -162,28 +185,69 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerID: 0
-  moveSpeed: 5
-  rotationSpeed: 10
-  maxStamina: 100
-  staminaDrainRate: 20
+  rerollChances: 3
   staminaImage: {fileID: 0}
-  turretPivot: {fileID: 912086195364612248}
-  cannonBarrel: {fileID: 912086193986228789}
-  firePoint: {fileID: 3545065917352415073}
-  verticalAimSpeed: 20
-  horizontalAimSpeed: 30
-  maxAimAngle: 60
-  minAimAngle: -10
-  projectilePrefab: {fileID: 7999235287928038026, guid: aecb4d882814f71479315d824d7913c7, type: 3}
-  minLaunchPower: 10
-  maxLaunchPower: 50
-  powerGaugeSpeed: 30
   powerImage: {fileID: 0}
   powerText: {fileID: 0}
-  stageTimeLimit: 5
   statusText: {fileID: 0}
   timerText: {fileID: 0}
   timerImage: {fileID: 0}
+  stageTimeLimit: 5
+  projectileSlotImages: []
+  rerollCountText: {fileID: 0}
+  projectileDatabase: []
+  trajectory: {fileID: 0}
+--- !u!114 &1384350807087265530
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 912086193924953049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beb5ec5d91029a34887ba056a27aa3e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 5
+  rotationSpeed: 10
+  gravityValue: -9.81
+  maxStamina: 100
+  staminaDrainRate: 20
+  currentStamina: 0
+--- !u!114 &4144193411543819691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 912086193924953049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 469ce2e11f199ac4bb60e1024f70cb4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  firePoint: {fileID: 3545065917352415073}
+  minLaunchPower: 10
+  maxLaunchPower: 50
+  powerGaugeSpeed: 30
+  currentLaunchPower: 0
+--- !u!54 &1144702427263277220
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 912086193924953049}
+  serializedVersion: 2
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
 --- !u!1 &912086193986228786
 GameObject:
   m_ObjectHideFlags: 0
@@ -602,7 +666,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3121379058071901379}
   m_LocalRotation: {x: -0.5, y: -0.5, z: -0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 1.66, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
