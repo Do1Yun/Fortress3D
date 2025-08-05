@@ -13,7 +13,8 @@ public class Chunk : MonoBehaviour
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private Mesh mesh;
-
+    public int bedrockHeight = 1; // 이 높이(Y) 이하로는 파괴할 수 없음
+    public int buildHeightLimit = 15; // 이 높이(Y) 이상으로는 생성할 수 없음 (chunkSize보다 작아야 함)
     void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
@@ -191,6 +192,20 @@ public class Chunk : MonoBehaviour
 
                     if (distance < radius)
                     {
+                        // --- [추가] 경계 보호 로직 ---
+                        // 1. 기반암(Bedrock) 보호: 기반암 높이 이하이고, 지형을 파괴하려 할 때(modificationAmount < 0)
+                        if (y <= bedrockHeight && modificationAmount < 0)
+                        {
+                            continue; // 이번 수정을 건너뜀
+                        }
+
+                        // 2. 건설 높이 제한 보호: 높이 제한 이상이고, 지형을 생성하려 할 때(modificationAmount > 0)
+                        if (y >= buildHeightLimit && modificationAmount > 0)
+                        {
+                            continue; // 이번 수정을 건너뜀
+                        }
+                        // --- 로직 끝 ---
+
                         float oldValue = voxelPoints[x, y, z];
                         float modification = modificationAmount * (1f - distance / radius);
                         voxelPoints[x, y, z] = Mathf.Clamp01(voxelPoints[x, y, z] + modification);
@@ -208,6 +223,6 @@ public class Chunk : MonoBehaviour
             CreateMeshData();
         }
     }
-    
+
 }
 
