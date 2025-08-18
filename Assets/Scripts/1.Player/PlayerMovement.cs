@@ -1,82 +1,101 @@
 using UnityEngine;
-using UnityEngine.UI; // Image 사용을 위해 추가
+using UnityEngine.UI;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("이동 설정")]
-    public float moveSpeed = 5.0f;
-    public float rotationSpeed = 10.0f;
-    public float gravityValue = -9.81f; // 중력 값
+    public float acceleration = 15.0f;
+    public float maxSpeed = 10.0f;
+    public float turnSpeed = 100.0f;
+    public float gravityValue = -9.81f;
+
+    [Header("경사면 설정")]
+    public float slopeAdaptSpeed = 10f;      // 차체가 경사면에 맞춰 기울어지는 속도
+    public float slopeRaycastLength = 1.5f;  // 경사면을 감지할 광선의 길이
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
-    [HideInInspector] public float currentStamina; // 외부에서 읽기만 하도록 HideInInspector
-    
-    // UI 참조 (PlayerController에서 SetUIReferences를 통해 전달받음)
-    private Image staminaImage;
+    [HideInInspector] public float currentStamina;
 
+    private Image staminaImage;
     private CharacterController characterController;
-    private Vector3 playerVelocity; // 플레이어의 현재 속도
+    private Vector3 playerVelocity;
+    private float currentSpeed = 0f;
 
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
-        currentStamina = maxStamina; // 초기 스태미나 설정
+        currentStamina = maxStamina;
     }
 
-    // PlayerController에서 UI 참조를 받아오기 위한 함수
     public void SetUIReferences(Image staminaImg)
     {
         staminaImage = staminaImg;
     }
 
-    // 스태미나를 초기화하는 함수 (PlayerController의 StartTurn에서 호출)
     public void ResetStamina()
     {
         currentStamina = maxStamina;
         UpdateStaminaUI();
     }
 
-    // 이동 처리 로직
     public void HandleMovement()
     {
-        // CharacterController가 지면에 닿아있고 하강 중이라면 Y 속도를 0으로 초기화
         if (characterController.isGrounded && playerVelocity.y < 0)
         {
             playerVelocity.y = 0f;
         }
 
-        // 입력 값 가져오기
-        float horizontalInput = Input.GetAxisRaw("Horizontal");
-        float verticalInput = Input.GetAxisRaw("Vertical");
+        float forwardInput = Input.GetAxis("Vertical");
+        float turnInput = Input.GetAxis("Horizontal");
 
-        // 플레이어 기준으로 이동 방향 계산
-        Vector3 moveDirection = transform.right * horizontalInput + transform.forward * verticalInput;
-        moveDirection.y = 0; // Y축 이동은 중력으로만 처리
-        moveDirection.Normalize(); // 대각선 이동 속도 보정
-
-        // 이동 조건: 입력이 있고 스태미나가 남아있는 경우
-        if (moveDirection.magnitude > 0.1f && currentStamina > 0)
+        if (currentStamina > 0)
         {
-            characterController.Move(moveDirection * moveSpeed * Time.deltaTime);
-            currentStamina -= staminaDrainRate * Time.deltaTime;
-            UpdateStaminaUI();
-            
-            // 이동 방향으로 플레이어 회전 (부드럽게)
-            if (moveDirection != Vector3.zero)
+            transform.Rotate(Vector3.up, turnInput * turnSpeed * Time.deltaTime, Space.World);
+            currentSpeed += forwardInput * acceleration * Time.deltaTime;
+            currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed / 2, maxSpeed);
+
+            if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
             {
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDirection, Vector3.up), rotationSpeed * Time.deltaTime);
+                currentStamina -= staminaDrainRate * Time.deltaTime;
+                UpdateStaminaUI();
             }
         }
-        
-        // 항상 중력 적용
+        else
+        {
+            currentSpeed = Mathf.Lerp(currentSpeed, 0, Time.deltaTime * 2);
+        }
+
+        // --- 수정된 차체 기울기 로직 ---
+        RaycastHit hit;
+        Quaternion targetRotation;
+
+        // 1. 월드 기준 아래 방향으로 광선을 쏴서 바닥 정보를 가져옴
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
+        {
+            // 바닥이 감지되면, 목표 회전값을 바닥의 기울기에 맞춤
+            targetRotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
+        }
+        else
+        {
+            // 바닥이 없으면(공중), 차체를 수평으로 되돌리는 것을 목표로 함
+            // 현재 y축 회전(방향)은 유지하면서 x, z축 기울기만 0으로 만듦
+            targetRotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
+        }
+
+        // 2. Slerp를 사용해 계산된 목표 회전값으로 부드럽게 차체를 회전시킴
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, slopeAdaptSpeed * Time.deltaTime);
+
+        // 이동 및 중력 적용
+        Vector3 moveDirection = transform.forward * currentSpeed;
+        characterController.Move(moveDirection * Time.deltaTime);
+
         playerVelocity.y += gravityValue * Time.deltaTime;
         characterController.Move(playerVelocity * Time.deltaTime);
     }
 
-    // 스태미나 UI 업데이트 함수
     public void UpdateStaminaUI()
     {
         if (staminaImage != null) staminaImage.fillAmount = currentStamina / maxStamina;
