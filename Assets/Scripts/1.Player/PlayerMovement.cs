@@ -9,10 +9,13 @@ public class PlayerMovement : MonoBehaviour
     public float maxSpeed = 10.0f;
     public float turnSpeed = 100.0f;
     public float gravityValue = -9.81f;
+    public float deceleration = 10f;
 
     [Header("경사면 설정")]
-    public float slopeAdaptSpeed = 10f;      // 차체가 경사면에 맞춰 기울어지는 속도
-    public float slopeRaycastLength = 1.5f;  // 경사면을 감지할 광선의 길이
+    public float slopeAdaptSpeed = 10f;
+    public float slopeRaycastLength = 1.5f;
+    [Tooltip("오르막길에서 속도가 얼마나 감소할지 결정합니다.")]
+    public float slopeResistance = 0.5f;
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
@@ -51,11 +54,41 @@ public class PlayerMovement : MonoBehaviour
         float forwardInput = Input.GetAxis("Vertical");
         float turnInput = Input.GetAxis("Horizontal");
 
+        RaycastHit hit;
+        Quaternion targetRotation;
+        float speedModifier = 1.0f;
+
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
+        {
+            targetRotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
+
+            // --- 오르막길 저항 로직 (단순화) ---
+            // 경사면이고, 앞으로 가려하고, '오르막' 방향일 때만 속도 저하
+            if (hit.normal.y < 0.99f && forwardInput > 0.1f && Vector3.Dot(transform.forward, Vector3.up) > 0)
+            {
+                float steepness = 1.0f - hit.normal.y;
+                speedModifier = Mathf.Max(1.0f - steepness * slopeResistance * 5f, 0.1f);
+            }
+            // 내리막길이나 평지에서는 speedModifier가 기본값 1.0f를 유지합니다.
+        }
+        else
+        {
+            targetRotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
+        }
+
         if (currentStamina > 0)
         {
             transform.Rotate(Vector3.up, turnInput * turnSpeed * Time.deltaTime, Space.World);
-            currentSpeed += forwardInput * acceleration * Time.deltaTime;
-            currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed / 2, maxSpeed);
+
+            if (Mathf.Abs(forwardInput) > 0.1f)
+            {
+                currentSpeed += forwardInput * acceleration * speedModifier * Time.deltaTime;
+                currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed / 2, maxSpeed * speedModifier);
+            }
+            else
+            {
+                currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
+            }
 
             if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
             {
@@ -65,30 +98,11 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            currentSpeed = Mathf.Lerp(currentSpeed, 0, Time.deltaTime * 2);
+            currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
         }
 
-        // --- 수정된 차체 기울기 로직 ---
-        RaycastHit hit;
-        Quaternion targetRotation;
-
-        // 1. 월드 기준 아래 방향으로 광선을 쏴서 바닥 정보를 가져옴
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
-        {
-            // 바닥이 감지되면, 목표 회전값을 바닥의 기울기에 맞춤
-            targetRotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
-        }
-        else
-        {
-            // 바닥이 없으면(공중), 차체를 수평으로 되돌리는 것을 목표로 함
-            // 현재 y축 회전(방향)은 유지하면서 x, z축 기울기만 0으로 만듦
-            targetRotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
-        }
-
-        // 2. Slerp를 사용해 계산된 목표 회전값으로 부드럽게 차체를 회전시킴
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, slopeAdaptSpeed * Time.deltaTime);
 
-        // 이동 및 중력 적용
         Vector3 moveDirection = transform.forward * currentSpeed;
         characterController.Move(moveDirection * Time.deltaTime);
 

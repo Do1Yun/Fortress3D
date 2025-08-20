@@ -217,6 +217,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2052664791027813038, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
+      propertyPath: m_VertexColorAlwaysGammaSpace
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
 --- !u!114 &562357450 stripped
@@ -704,6 +708,10 @@ PrefabInstance:
     - target: {fileID: 977182312925777150, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: maxStamina
       value: 1e+15
+      objectReference: {fileID: 0}
+    - target: {fileID: 977182312925777150, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
+      propertyPath: slopeAdaptSpeed
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 3818938376461592831, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: m_Name
