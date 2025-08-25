@@ -399,7 +399,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 797502920}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.958, z: -6.348}
+  m_LocalPosition: {x: 0, y: 2, z: -8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -710,8 +710,20 @@ PrefabInstance:
       value: 1e+15
       objectReference: {fileID: 0}
     - target: {fileID: 977182312925777150, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
+      propertyPath: acceleration
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 977182312925777150, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
+      propertyPath: gravityValue
+      value: -13.99
+      objectReference: {fileID: 0}
+    - target: {fileID: 977182312925777150, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: slopeAdaptSpeed
-      value: 100
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 977182312925777150, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
+      propertyPath: slopeResistance
+      value: 0.7
       objectReference: {fileID: 0}
     - target: {fileID: 3818938376461592831, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: m_Name

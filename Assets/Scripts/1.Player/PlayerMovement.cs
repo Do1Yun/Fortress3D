@@ -16,6 +16,8 @@ public class PlayerMovement : MonoBehaviour
     public float slopeRaycastLength = 1.5f;
     [Tooltip("오르막길에서 속도가 얼마나 감소할지 결정합니다.")]
     public float slopeResistance = 0.5f;
+    [Tooltip("경사면 저항이 얼마나 부드럽게 적용될지 결정합니다.")]
+    public float resistanceAdaptSpeed = 5f; // 저항값 전환 속도
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
@@ -26,6 +28,7 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController characterController;
     private Vector3 playerVelocity;
     private float currentSpeed = 0f;
+    private float currentSpeedModifier = 1.0f; // 부드럽게 변하는 현재 저항값
 
     void Awake()
     {
@@ -56,25 +59,31 @@ public class PlayerMovement : MonoBehaviour
 
         RaycastHit hit;
         Quaternion targetRotation;
-        float speedModifier = 1.0f;
+        float targetSpeedModifier = 1.0f; // 이번 프레임의 목표 저항값
 
         if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
         {
             targetRotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
 
-            // --- 오르막길 저항 로직 (단순화) ---
-            // 경사면이고, 앞으로 가려하고, '오르막' 방향일 때만 속도 저하
-            if (hit.normal.y < 0.99f && forwardInput > 0.1f && Vector3.Dot(transform.forward, Vector3.up) > 0)
+            if (hit.normal.y < 0.99f && Mathf.Abs(forwardInput) > 0.1f)
             {
+                float verticalDirection = Vector3.Dot(transform.forward, Vector3.up);
                 float steepness = 1.0f - hit.normal.y;
-                speedModifier = Mathf.Max(1.0f - steepness * slopeResistance * 5f, 0.1f);
+                bool isUphill = (forwardInput > 0 && verticalDirection > 0) || (forwardInput < 0 && verticalDirection < 0);
+
+                if (isUphill)
+                {
+                    targetSpeedModifier = Mathf.Max(1.0f - steepness * slopeResistance * 5f, 0.1f);
+                }
             }
-            // 내리막길이나 평지에서는 speedModifier가 기본값 1.0f를 유지합니다.
         }
         else
         {
             targetRotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
         }
+
+        // --- 핵심: 저항값을 부드럽게 변경 ---
+        currentSpeedModifier = Mathf.Lerp(currentSpeedModifier, targetSpeedModifier, resistanceAdaptSpeed * Time.deltaTime);
 
         if (currentStamina > 0)
         {
@@ -82,13 +91,18 @@ public class PlayerMovement : MonoBehaviour
 
             if (Mathf.Abs(forwardInput) > 0.1f)
             {
-                currentSpeed += forwardInput * acceleration * speedModifier * Time.deltaTime;
-                currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed / 2, maxSpeed * speedModifier);
+                // 부드러워진 저항값을 사용
+                currentSpeed += forwardInput * acceleration * currentSpeedModifier * Time.deltaTime;
             }
             else
             {
                 currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
             }
+
+            // 부드러워진 저항값을 사용
+            float currentMaxSpeed = maxSpeed * currentSpeedModifier;
+            float currentMinSpeed = -maxSpeed / 2 * currentSpeedModifier;
+            currentSpeed = Mathf.Clamp(currentSpeed, currentMinSpeed, currentMaxSpeed);
 
             if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
             {
