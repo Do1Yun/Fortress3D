@@ -15,7 +15,7 @@ public class WindZone : MonoBehaviour
     private void Awake()
     {
         boxCollider = GetComponent<BoxCollider>();
-        ChangeZoneRandomly();
+        ChangeZoneRandomly(); // 시작 시 실행
     }
 
     // 특정 상황에서 호출할 메서드
