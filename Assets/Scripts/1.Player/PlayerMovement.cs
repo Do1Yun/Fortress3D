@@ -1,102 +1,43 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("이동 설정")]
-    public float moveSpeed = 5f;
+    public float acceleration = 15.0f;
+    public float maxSpeed = 10.0f;
+    public float turnSpeed = 100.0f;
+    public float gravityValue = -9.81f;
+    public float deceleration = 10f;
+
+    [Header("경사면 설정")]
+    public float slopeAdaptSpeed = 10f;
+    public float slopeRaycastLength = 1.5f;
+    public float slopeResistance = 0.5f;
+    public float resistanceAdaptSpeed = 5f;
+
+    [Header("스테미너 설정")]
     public float maxStamina = 100f;
-    public float staminaConsumptionRate = 20f;
-    public float currentStamina { get; private set; }
+    public float staminaDrainRate = 20f;
+    [HideInInspector] public float currentStamina;
 
-    [Header("지면 체크")]
-    public float groundCheckDistance = 1.5f;
-    public LayerMask groundLayer;
-
-    private Rigidbody rb;
     private Image staminaImage;
+    private CharacterController characterController;
+    private Vector3 playerVelocity;
+    private float currentSpeed = 0f;
+    private float currentSpeedModifier = 1.0f;
 
     void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        characterController = GetComponent<CharacterController>();
         currentStamina = maxStamina;
     }
 
-    public void SetUIReferences(Image stamina)
+    public void SetUIReferences(Image staminaImg)
     {
-        staminaImage = stamina;
-    }
-
-    public void HandleMovement()
-    {
-        if (rb.isKinematic)
-        {
-            rb.isKinematic = false;
-        }
-
-        if (currentStamina > 0)
-        {
-            float moveHorizontal = Input.GetAxis("Horizontal");
-            float moveVertical = Input.GetAxis("Vertical");
-            Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
-
-            if (movement.magnitude > 0)
-            {
-                rb.velocity = new Vector3(movement.x * moveSpeed, rb.velocity.y, movement.z * moveSpeed);
-                currentStamina -= staminaConsumptionRate * Time.deltaTime;
-            }
-            else
-            {
-                rb.velocity = new Vector3(0, rb.velocity.y, 0);
-            }
-        }
-        else
-        {
-            currentStamina = 0;
-            rb.velocity = new Vector3(0, rb.velocity.y, 0);
-        }
-
+        staminaImage = staminaImg;
         UpdateStaminaUI();
-    }
-
-    public void StopMovement()
-    {
-        if (rb == null) return;
-
-        rb.velocity = Vector3.zero;
-
-        // IsGrounded() 함수의 결과를 변수에 저장합니다.
-        bool isPlayerGrounded = IsGrounded();
-
-        // ★★★ 디버그 로그 1: StopMovement가 호출된 시점과 땅 감지 결과를 출력합니다.
-        Debug.Log($"StopMovement Called! Is Player Grounded? -> {isPlayerGrounded}");
-
-        if (isPlayerGrounded)
-        {
-            rb.isKinematic = true;
-            // ★★★ 디버그 로그 2: Kinematic으로 전환되었음을 알립니다.
-            Debug.Log("Result -> Rigidbody is now KINEMATIC (고정 상태)");
-        }
-        else
-        {
-            rb.isKinematic = false;
-            // ★★★ 디버그 로그 3: Non-Kinematic 상태임을 알립니다.
-            Debug.Log("Result -> Rigidbody is now NON-KINEMATIC (물리 적용 상태, 떨어져야 함)");
-        }
-    }
-
-    public bool IsGrounded()
-    {
-        // 아래로 레이저(Raycast)를 쏴서 땅과 충돌하는지 확인합니다.
-        bool didHit = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
-
-        // ★★★ 시각적 디버깅: 씬(Scene) 화면에 레이저를 직접 그립니다.
-        // 땅을 감지했다면: 초록색 선
-        // 땅을 감지하지 못했다면: 빨간색 선
-        Color rayColor = didHit ? Color.green : Color.red;
-        Debug.DrawRay(transform.position, Vector3.down * groundCheckDistance, rayColor, 2.0f);
-
-        return didHit;
     }
 
     public void ResetStamina()
@@ -105,7 +46,95 @@ public class PlayerMovement : MonoBehaviour
         UpdateStaminaUI();
     }
 
-    void UpdateStaminaUI()
+    /// <summary>
+    /// 이동 턴에 호출: 키보드 입력, 중력, 경사면 적응을 모두 처리합니다.
+    /// </summary>
+    public void HandleMovement()
+    {
+        ApplyHorizontalMovement();
+        ApplyGravityAndSlope();
+    }
+
+    /// <summary>
+    /// 이동 턴이 아닐 때 호출: 중력과 경사면 적응만 처리하여 제자리를 지킵니다.
+    /// </summary>
+    public void UpdatePhysics()
+    {
+        // 속도를 서서히 0으로 줄입니다.
+        currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
+        ApplyGravityAndSlope();
+    }
+
+    private void ApplyGravityAndSlope()
+    {
+        // 중력 적용
+        if (characterController.isGrounded && playerVelocity.y < 0)
+        {
+            playerVelocity.y = -2f;
+        }
+        playerVelocity.y += gravityValue * Time.deltaTime;
+
+        // 경사면 적응
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
+        {
+            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
+        }
+
+        // 최종 이동 적용
+        Vector3 moveDirection = transform.forward * currentSpeed;
+        characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
+    }
+
+    private void ApplyHorizontalMovement()
+    {
+        float forwardInput = Input.GetAxis("Vertical");
+        float turnInput = Input.GetAxis("Horizontal");
+
+        transform.Rotate(0, turnInput * turnSpeed * Time.deltaTime, 0);
+
+        if (currentStamina > 0)
+        {
+            RaycastHit hit;
+            float slopeModifier = 1.0f;
+            if (Physics.Raycast(transform.position, transform.forward, out hit, 1.5f))
+            {
+                float slopeAngle = Vector3.Angle(Vector3.up, hit.normal);
+                if (slopeAngle > characterController.slopeLimit && Vector3.Dot(transform.forward, Vector3.up) < 0)
+                {
+                    slopeModifier = Mathf.Clamp(1.0f - (slopeAngle / 90f) * slopeResistance, 0.1f, 1.0f);
+                }
+            }
+            currentSpeedModifier = Mathf.Lerp(currentSpeedModifier, slopeModifier, resistanceAdaptSpeed * Time.deltaTime);
+
+            if (Mathf.Abs(forwardInput) > 0.1f)
+            {
+                currentSpeed += forwardInput * acceleration * currentSpeedModifier * Time.deltaTime;
+            }
+            else
+            {
+                currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
+            }
+
+            float currentMaxSpeed = maxSpeed * currentSpeedModifier;
+            float currentMinSpeed = -maxSpeed / 2 * currentSpeedModifier;
+            currentSpeed = Mathf.Clamp(currentSpeed, currentMinSpeed, currentMaxSpeed);
+
+            if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
+            {
+                currentStamina -= staminaDrainRate * Time.deltaTime;
+                UpdateStaminaUI();
+            }
+        }
+        else
+        {
+            currentStamina = 0;
+            currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
+        }
+    }
+
+    public void UpdateStaminaUI()
     {
         if (staminaImage != null)
         {

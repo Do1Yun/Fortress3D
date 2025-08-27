@@ -60,9 +60,10 @@ public class GameManager : MonoBehaviour
     {
         SetGameState(GameState.PreGame);
 
+        // 모든 플레이어를 Waiting 상태로 시작시킵니다.
         foreach (var player in players)
         {
-            if (player != null) player.enabled = false;
+            if (player != null) player.EndTurn(); // EndTurn()은 Waiting 상태로 만듭니다.
         }
 
         StartCoroutine(StartGameAfterDelay(1.5f));
@@ -73,8 +74,7 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         PlayerController firstPlayer = players[currentPlayerIndex];
-        firstPlayer.enabled = true;
-        firstPlayer.StartTurn();
+        firstPlayer.StartTurn(); // 스크립트를 켜는 대신, 턴 시작만 알립니다.
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);
@@ -95,8 +95,8 @@ public class GameManager : MonoBehaviour
         PlayerController previousPlayer = players[currentPlayerIndex];
         if (previousPlayer != null)
         {
-            previousPlayer.EndTurn();
-            previousPlayer.enabled = false;
+            previousPlayer.EndTurn(); // 이전 플레이어는 Waiting 상태로 전환
+            // previousPlayer.enabled = false; // 이 줄을 삭제합니다.
             OnTurnEnd.Invoke(previousPlayer.playerID);
         }
 
@@ -121,8 +121,8 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         PlayerController nextPlayer = players[currentPlayerIndex];
-        nextPlayer.enabled = true;
-        nextPlayer.StartTurn();
+        // nextPlayer.enabled = true; // 이 줄을 삭제합니다.
+        nextPlayer.StartTurn(); // 다음 플레이어에게 턴 시작을 알립니다.
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
@@ -163,9 +163,7 @@ public class GameManager : MonoBehaviour
 
     public void OnProjectileDestroyed()
     {
-        // 포탄이 날아가는 중이 아닐 때 호출되면(예: 턴 종료 처리 중 다른 포탄이 터짐) 턴이 중복으로 넘어가는 것을 방지
         if (currentState != GameState.ProjectileFlying) return;
-
         SwitchToNextTurn();
     }
 

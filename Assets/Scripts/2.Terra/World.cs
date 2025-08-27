@@ -82,16 +82,5 @@ public class World : MonoBehaviour
                 }
             }
         }
-
-        // 지형 변경 후, 주변의 모든 플레이어에게 스스로 발밑을 확인하도록 요청합니다.
-        Collider[] colliders = Physics.OverlapSphere(worldPos, radius);
-        foreach (var collider in colliders)
-        {
-            PlayerController player = collider.GetComponentInParent<PlayerController>();
-            if (player != null)
-            {
-                player.CheckForGround();
-            }
-        }
     }
 }

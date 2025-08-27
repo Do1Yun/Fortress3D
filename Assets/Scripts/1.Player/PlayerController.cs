@@ -41,65 +41,25 @@ public class PlayerController : MonoBehaviour
     public Trajectory trajectory;
     private CameraController mainCameraController;
 
-    // Rigidbody 참조를 위한 변수
-    private Rigidbody rb;
-
     private float currentStageTimer;
 
-   void Awake()
-{
-    // ================================================================== //
-    // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 기존 Awake() 함수를 이걸로 교체해주세요 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ //
-    // ================================================================== //
+    void Awake()
+    {
+        playerMovement = GetComponent<PlayerMovement>();
+        playerAiming = GetComponent<PlayerAiming>();
+        playerShooting = GetComponent<PlayerShooting>();
+        trajectory = GetComponent<Trajectory>();
 
-    Debug.Log("--- PlayerController Awake() 진단 시작 ---");
-
-    playerMovement = GetComponent<PlayerMovement>();
-    if (playerMovement == null)
-    {
-        Debug.LogError("진단 결과: PlayerMovement 스크립트를 찾지 못했습니다!");
+        if (playerMovement == null || playerAiming == null || playerShooting == null)
+        {
+            Debug.LogError("PlayerController에 필요한 기능 스크립트가 모두 할당되지 않았습니다.", this);
+            enabled = false;
+        }
+        if (trajectory == null)
+        {
+            Debug.LogWarning("Trajectory 컴포넌트를 찾을 수 없습니다.", this);
+        }
     }
-    else
-    {
-        Debug.Log("진단 결과: PlayerMovement 스크립트 찾기 성공.");
-    }
-
-    playerAiming = GetComponent<PlayerAiming>();
-    if (playerAiming == null)
-    {
-        Debug.LogError("진단 결과: PlayerAiming 스크립트를 찾지 못했습니다!");
-    }
-    else
-    {
-        Debug.Log("진단 결과: PlayerAiming 스크립트 찾기 성공.");
-    }
-
-    playerShooting = GetComponent<PlayerShooting>();
-    if (playerShooting == null)
-    {
-        Debug.LogError("진단 결과: PlayerShooting 스크립트를 찾지 못했습니다!");
-    }
-    else
-    {
-        Debug.Log("진단 결과: PlayerShooting 스크립트 찾기 성공.");
-    }
-
-    trajectory = GetComponent<Trajectory>();
-    if (trajectory == null)
-    {
-        Debug.LogWarning("진단 결과: Trajectory 컴포넌트를 찾을 수 없습니다.");
-    }
-    else
-    {
-        Debug.Log("진단 결과: Trajectory 컴포넌트 찾기 성공.");
-    }
-    
-    Debug.Log("--- PlayerController Awake() 진단 종료 ---");
-
-    // ================================================================== //
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ //
-    // ================================================================== //
-}
 
     void Start()
     {
@@ -113,10 +73,20 @@ public class PlayerController : MonoBehaviour
         playerShooting.SetUIReferences(powerImage, powerText);
     }
 
+
     void Update()
     {
-        if (currentState == PlayerState.Waiting || currentState == PlayerState.Firing) return;
+        // Firing 상태일 때만 모든 행동을 멈춥니다.
+        if (currentState == PlayerState.Firing) return;
 
+        // Waiting 상태일 때는 중력 계산만 하고, 다른 로직은 실행하지 않습니다.
+        if (currentState == PlayerState.Waiting)
+        {
+            playerMovement.UpdatePhysics(); // 중력만 처리
+            return;
+        }
+
+        // 이동 상태가 아닐 때 타이머 작동
         if (currentState != PlayerState.Moving)
         {
             currentStageTimer -= Time.deltaTime;
@@ -130,10 +100,11 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        // 상태별 로직 처리
         switch (currentState)
         {
             case PlayerState.Moving:
-                playerMovement.HandleMovement();
+                playerMovement.HandleMovement(); // 키보드 입력 + 중력 모두 처리
                 if (trajectory != null) trajectory.HideTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
                 {
@@ -141,26 +112,29 @@ public class PlayerController : MonoBehaviour
                 }
                 break;
             case PlayerState.SelectingProjectile:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 HandleProjectileSelection();
                 break;
             case PlayerState.AimingVertical:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 playerAiming.HandleVerticalAim();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.AimingHorizontal:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 playerAiming.HandleHorizontalAim();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.SettingPower:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 playerShooting.HandlePowerSetting();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
                 break;
         }
     }
-
     public void StartTurn()
     {
         playerMovement.ResetStamina();
@@ -216,7 +190,6 @@ public class PlayerController : MonoBehaviour
         switch (currentState)
         {
             case PlayerState.Moving:
-                playerMovement.StopMovement(); // 이동을 멈추고 물리 상태를 결정하도록 요청
                 GenerateProjectileSelection();
                 SetPlayerState(PlayerState.SelectingProjectile);
                 break;
@@ -322,29 +295,6 @@ public class PlayerController : MonoBehaviour
         {
             statusText.gameObject.SetActive(true);
             statusText.text = state.ToString();
-        }
-    }
-
-    /// <summary>
-    /// 외부(World.cs)에서 호출할 함수.
-    /// 자신의 발밑 지형을 확인하고, 땅이 없으면 물리 상태를 갱신하여 떨어지도록 만듭니다.
-    /// </summary>
-    public void CheckForGround()
-    {
-        // 이미 물리 엔진의 제어를 받고 있다면(움직이는 중 등) 굳이 확인할 필요가 없습니다.
-        if (rb != null && !rb.isKinematic)
-        {
-            return;
-        }
-
-        // 아주 짧은 레이캐스트를 아래로 쏴서 발밑에 땅이 있는지 확인합니다.
-        // 이 때 PlayerMovement에 있는 groundLayer 정보를 가져와야 하므로, PlayerMovement에 IsGrounded 함수를 만들어 호출합니다.
-        if (playerMovement != null && !playerMovement.IsGrounded())
-        {
-            Debug.Log($"Player {playerID}의 발밑에 땅이 없어 isKinematic을 해제합니다.");
-
-            // 땅이 없다면, isKinematic을 false로 만들어 중력의 영향을 받게 합니다.
-            rb.isKinematic = false;
         }
     }
 
