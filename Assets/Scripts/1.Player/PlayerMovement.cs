@@ -58,27 +58,45 @@ public class PlayerMovement : MonoBehaviour
 
         UpdateStaminaUI();
     }
-   
+
     public void StopMovement()
     {
+        if (rb == null) return;
+
         rb.velocity = Vector3.zero;
 
-        // 1. 발밑에 땅이 있는지 확인한다.
-        if (IsGrounded())
+        // IsGrounded() 함수의 결과를 변수에 저장합니다.
+        bool isPlayerGrounded = IsGrounded();
+
+        // ★★★ 디버그 로그 1: StopMovement가 호출된 시점과 땅 감지 결과를 출력합니다.
+        Debug.Log($"StopMovement Called! Is Player Grounded? -> {isPlayerGrounded}");
+
+        if (isPlayerGrounded)
         {
-            // 2. 땅 위에 있을 때만 '홀로그램(isKinematic=true)'으로 만들어 미끄러짐을 방지한다.
             rb.isKinematic = true;
+            // ★★★ 디버그 로그 2: Kinematic으로 전환되었음을 알립니다.
+            Debug.Log("Result -> Rigidbody is now KINEMATIC (고정 상태)");
         }
         else
         {
-            // 3. 공중에 있다면, 계속 '탱크(isKinematic=false)' 상태를 유지하여 아래로 떨어진다.
             rb.isKinematic = false;
+            // ★★★ 디버그 로그 3: Non-Kinematic 상태임을 알립니다.
+            Debug.Log("Result -> Rigidbody is now NON-KINEMATIC (물리 적용 상태, 떨어져야 함)");
         }
     }
 
     public bool IsGrounded()
     {
-        return Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
+        // 아래로 레이저(Raycast)를 쏴서 땅과 충돌하는지 확인합니다.
+        bool didHit = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
+
+        // ★★★ 시각적 디버깅: 씬(Scene) 화면에 레이저를 직접 그립니다.
+        // 땅을 감지했다면: 초록색 선
+        // 땅을 감지하지 못했다면: 빨간색 선
+        Color rayColor = didHit ? Color.green : Color.red;
+        Debug.DrawRay(transform.position, Vector3.down * groundCheckDistance, rayColor, 2.0f);
+
+        return didHit;
     }
 
     public void ResetStamina()

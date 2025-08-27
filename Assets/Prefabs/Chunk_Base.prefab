@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6725756184461852868}
   - component: {fileID: 4899115194501690582}
   - component: {fileID: -5129111105547004109}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Chunk_Base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -114,3 +114,5 @@ MonoBehaviour:
   chunkSize: 16
   isoLevel: 0.5
   chunkPosition: {x: 0, y: 0, z: 0}
+  bedrockHeight: 1
+  buildHeightLimit: 15

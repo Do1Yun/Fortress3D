@@ -617,18 +617,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: beb5ec5d91029a34887ba056a27aa3e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  acceleration: 15
-  maxSpeed: 10
-  turnSpeed: 100
-  gravityValue: -9.81
-  deceleration: 10
-  slopeAdaptSpeed: 10
-  slopeRaycastLength: 1.5
-  slopeResistance: 0.5
-  resistanceAdaptSpeed: 5
+  moveSpeed: 5
   maxStamina: 100
-  staminaDrainRate: 20
-  currentStamina: 0
+  staminaConsumptionRate: 20
+  groundCheckDistance: 1.5
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!114 &6137875063882667236
 MonoBehaviour:
   m_ObjectHideFlags: 0
