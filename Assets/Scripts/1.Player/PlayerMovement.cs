@@ -14,10 +14,8 @@ public class PlayerMovement : MonoBehaviour
     [Header("경사면 설정")]
     public float slopeAdaptSpeed = 10f;
     public float slopeRaycastLength = 1.5f;
-    [Tooltip("오르막길에서 속도가 얼마나 감소할지 결정합니다.")]
     public float slopeResistance = 0.5f;
-    [Tooltip("경사면 저항이 얼마나 부드럽게 적용될지 결정합니다.")]
-    public float resistanceAdaptSpeed = 5f; // 저항값 전환 속도
+    public float resistanceAdaptSpeed = 5f;
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
@@ -28,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController characterController;
     private Vector3 playerVelocity;
     private float currentSpeed = 0f;
-    private float currentSpeedModifier = 1.0f; // 부드럽게 변하는 현재 저항값
+    private float currentSpeedModifier = 1.0f;
 
     void Awake()
     {
@@ -39,6 +37,7 @@ public class PlayerMovement : MonoBehaviour
     public void SetUIReferences(Image staminaImg)
     {
         staminaImage = staminaImg;
+        UpdateStaminaUI();
     }
 
     public void ResetStamina()
@@ -47,51 +46,70 @@ public class PlayerMovement : MonoBehaviour
         UpdateStaminaUI();
     }
 
+    /// <summary>
+    /// 이동 턴에 호출: 키보드 입력, 중력, 경사면 적응을 모두 처리합니다.
+    /// </summary>
     public void HandleMovement()
     {
+        ApplyHorizontalMovement();
+        ApplyGravityAndSlope();
+    }
+
+    /// <summary>
+    /// 이동 턴이 아닐 때 호출: 중력과 경사면 적응만 처리하여 제자리를 지킵니다.
+    /// </summary>
+    public void UpdatePhysics()
+    {
+        // 속도를 서서히 0으로 줄입니다.
+        currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
+        ApplyGravityAndSlope();
+    }
+
+    private void ApplyGravityAndSlope()
+    {
+        // 중력 적용
         if (characterController.isGrounded && playerVelocity.y < 0)
         {
-            playerVelocity.y = 0f;
+            playerVelocity.y = -2f;
+        }
+        playerVelocity.y += gravityValue * Time.deltaTime;
+
+        // 경사면 적응
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
+        {
+            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
         }
 
+        // 최종 이동 적용
+        Vector3 moveDirection = transform.forward * currentSpeed;
+        characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
+    }
+
+    private void ApplyHorizontalMovement()
+    {
         float forwardInput = Input.GetAxis("Vertical");
         float turnInput = Input.GetAxis("Horizontal");
 
-        RaycastHit hit;
-        Quaternion targetRotation;
-        float targetSpeedModifier = 1.0f; // 이번 프레임의 목표 저항값
-
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
-        {
-            targetRotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
-
-            if (hit.normal.y < 0.99f && Mathf.Abs(forwardInput) > 0.1f)
-            {
-                float verticalDirection = Vector3.Dot(transform.forward, Vector3.up);
-                float steepness = 1.0f - hit.normal.y;
-                bool isUphill = (forwardInput > 0 && verticalDirection > 0) || (forwardInput < 0 && verticalDirection < 0);
-
-                if (isUphill)
-                {
-                    targetSpeedModifier = Mathf.Max(1.0f - steepness * slopeResistance * 5f, 0.1f);
-                }
-            }
-        }
-        else
-        {
-            targetRotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
-        }
-
-        // --- 핵심: 저항값을 부드럽게 변경 ---
-        currentSpeedModifier = Mathf.Lerp(currentSpeedModifier, targetSpeedModifier, resistanceAdaptSpeed * Time.deltaTime);
+        transform.Rotate(0, turnInput * turnSpeed * Time.deltaTime, 0);
 
         if (currentStamina > 0)
         {
-            transform.Rotate(Vector3.up, turnInput * turnSpeed * Time.deltaTime, Space.World);
+            RaycastHit hit;
+            float slopeModifier = 1.0f;
+            if (Physics.Raycast(transform.position, transform.forward, out hit, 1.5f))
+            {
+                float slopeAngle = Vector3.Angle(Vector3.up, hit.normal);
+                if (slopeAngle > characterController.slopeLimit && Vector3.Dot(transform.forward, Vector3.up) < 0)
+                {
+                    slopeModifier = Mathf.Clamp(1.0f - (slopeAngle / 90f) * slopeResistance, 0.1f, 1.0f);
+                }
+            }
+            currentSpeedModifier = Mathf.Lerp(currentSpeedModifier, slopeModifier, resistanceAdaptSpeed * Time.deltaTime);
 
             if (Mathf.Abs(forwardInput) > 0.1f)
             {
-                // 부드러워진 저항값을 사용
                 currentSpeed += forwardInput * acceleration * currentSpeedModifier * Time.deltaTime;
             }
             else
@@ -99,7 +117,6 @@ public class PlayerMovement : MonoBehaviour
                 currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
             }
 
-            // 부드러워진 저항값을 사용
             float currentMaxSpeed = maxSpeed * currentSpeedModifier;
             float currentMinSpeed = -maxSpeed / 2 * currentSpeedModifier;
             currentSpeed = Mathf.Clamp(currentSpeed, currentMinSpeed, currentMaxSpeed);
@@ -112,20 +129,16 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
+            currentStamina = 0;
             currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
         }
-
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, slopeAdaptSpeed * Time.deltaTime);
-
-        Vector3 moveDirection = transform.forward * currentSpeed;
-        characterController.Move(moveDirection * Time.deltaTime);
-
-        playerVelocity.y += gravityValue * Time.deltaTime;
-        characterController.Move(playerVelocity * Time.deltaTime);
     }
 
     public void UpdateStaminaUI()
     {
-        if (staminaImage != null) staminaImage.fillAmount = currentStamina / maxStamina;
+        if (staminaImage != null)
+        {
+            staminaImage.fillAmount = currentStamina / maxStamina;
+        }
     }
 }

@@ -73,10 +73,18 @@ public class PlayerController : MonoBehaviour
         playerShooting.SetUIReferences(powerImage, powerText);
     }
 
+
     void Update()
     {
-        // Waiting, Firing 상태이거나 이 스크립트가 비활성화 상태일 때는 아무것도 하지 않음
-        if (currentState == PlayerState.Waiting || currentState == PlayerState.Firing) return;
+        // Firing 상태일 때만 모든 행동을 멈춥니다.
+        if (currentState == PlayerState.Firing) return;
+
+        // Waiting 상태일 때는 중력 계산만 하고, 다른 로직은 실행하지 않습니다.
+        if (currentState == PlayerState.Waiting)
+        {
+            playerMovement.UpdatePhysics(); // 중력만 처리
+            return;
+        }
 
         // 이동 상태가 아닐 때 타이머 작동
         if (currentState != PlayerState.Moving)
@@ -96,7 +104,7 @@ public class PlayerController : MonoBehaviour
         switch (currentState)
         {
             case PlayerState.Moving:
-                playerMovement.HandleMovement();
+                playerMovement.HandleMovement(); // 키보드 입력 + 중력 모두 처리
                 if (trajectory != null) trajectory.HideTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
                 {
@@ -104,26 +112,29 @@ public class PlayerController : MonoBehaviour
                 }
                 break;
             case PlayerState.SelectingProjectile:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 HandleProjectileSelection();
                 break;
             case PlayerState.AimingVertical:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 playerAiming.HandleVerticalAim();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.AimingHorizontal:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 playerAiming.HandleHorizontalAim();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.SettingPower:
+                playerMovement.UpdatePhysics(); // 중력만 처리
                 playerShooting.HandlePowerSetting();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
                 break;
         }
     }
-
     public void StartTurn()
     {
         playerMovement.ResetStamina();
