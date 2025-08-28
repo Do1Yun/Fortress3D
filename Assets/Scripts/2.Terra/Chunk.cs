@@ -223,6 +223,4 @@ public class Chunk : MonoBehaviour
             CreateMeshData();
         }
     }
-
 }
-

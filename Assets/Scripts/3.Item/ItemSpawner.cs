@@ -4,25 +4,38 @@ using UnityEngine;
 
 public class ItemSpawner : MonoBehaviour
 {
-    public GameObject itemPrefabs;    // 다양한 아이템 프리팹 배열
-    public float spawnInterval = 5f;    // 스폰 주기
-    public Vector3 spawnAreaMin;        // 스폰 가능 범위 최소값
-    public Vector3 spawnAreaMax;        // 스폰 가능 범위 최대값
+    public GameObject itemPrefab;       // 아이템 프리팹
+    public Chunk chunk;                 // 아이템을 생성할 Chunk
+    public float spawnInterval = 5f;
 
-    private void Start()
+    private float timer;
+
+    void Update()
     {
-        InvokeRepeating(nameof(SpawnItem), 2f, spawnInterval);
+        timer += Time.deltaTime;
+        if (timer >= spawnInterval)
+        {
+            SpawnItem();
+            timer = 0f;
+        }
     }
 
     void SpawnItem()
     {
-        // 랜덤 위치
-        float x = Random.Range(spawnAreaMin.x, spawnAreaMax.x);
-        float z = Random.Range(spawnAreaMin.z, spawnAreaMax.z);
-        Vector3 spawnPos = new Vector3(x, 0.5f, z);
+        if (chunk == null || itemPrefab == null) return;
 
-        GameObject item = Instantiate(itemPrefabs, spawnPos, Quaternion.identity);
+        int x = Random.Range(0, chunk.chunkSize);
+        int y = 50;
+        int z = Random.Range(0, chunk.chunkSize);
 
-        item.tag = "Item";
+        Vector3 spawnPos = new Vector3(
+            x + chunk.transform.position.x,
+            y + chunk.transform.position.y,
+            z + chunk.transform.position.z
+        );
+
+        GameObject item = Instantiate(itemPrefab, spawnPos, Quaternion.identity);
+        
     }
 }
+

@@ -45,7 +45,7 @@ public class WindZone : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Projectile"))
+        if (other.CompareTag("Bullet"))
         {
             Rigidbody rb = other.GetComponent<Rigidbody>();
             if (rb != null)

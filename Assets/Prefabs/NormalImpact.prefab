@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 1771300846374723506}
   m_Layer: 0
   m_Name: NormalImpact
-  m_TagString: Projectile
+  m_TagString: Bullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -127,7 +127,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdbe3a3ef3abe4c4e987a813098cd4d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  type: 0
   lifeTime: 5
   explosionRadius: 5
-  terrainModificationStrength: 1
   explosionEffectPrefab: {fileID: 0}
+  terrainModificationStrength: 1
+  explosionForce: 500
