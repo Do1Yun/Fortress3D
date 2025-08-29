@@ -9,8 +9,8 @@ public class PlayerAiming : MonoBehaviour
     [Header("조준 속도 및 각도")]
     public float verticalAimSpeed = 20f;
     public float horizontalAimSpeed = 30f;
-    public float maxAimAngle = 45.0f;
-    public float minAimAngle = -20.0f;
+    public float maxAimAngle = 80.0f;
+    public float minAimAngle = -80.0f;
 
     [HideInInspector] public float currentVerticalAngle = 0.0f; // 현재 수직 조준 각도
 

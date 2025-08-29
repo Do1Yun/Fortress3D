@@ -1,3 +1,5 @@
+// Scripts.zip/1.Player/PlayerController.cs
+
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -6,7 +8,6 @@ using System.Linq;
 
 public class PlayerController : MonoBehaviour
 {
-    // 플레이어의 상태를 나타내는 enum 정의
     public enum PlayerState { SelectingProjectile, Moving, AimingVertical, AimingHorizontal, SettingPower, Waiting, Firing }
     private PlayerState currentState;
 
@@ -34,12 +35,13 @@ public class PlayerController : MonoBehaviour
     private List<ProjectileData> currentSelection = new List<ProjectileData>();
     private ProjectileData selectedProjectile;
 
-    // 분할된 기능 스크립트들에 대한 참조
     private PlayerMovement playerMovement;
     private PlayerAiming playerAiming;
     private PlayerShooting playerShooting;
     public Trajectory trajectory;
-    private CameraController mainCameraController;
+
+    // [삭제] 카메라 컨트롤러에 대한 직접 참조를 제거합니다.
+    // private CameraController mainCameraController;
 
     private float currentStageTimer;
 
@@ -63,30 +65,20 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        mainCameraController = Camera.main.GetComponent<CameraController>();
-        if (mainCameraController == null)
-        {
-            Debug.LogError("씬에 CameraController가 있는 메인 카메라를 찾을 수 없습니다.");
-        }
-
+        // [삭제] CameraController를 찾는 로직을 모두 제거합니다.
         playerMovement.SetUIReferences(staminaImage);
         playerShooting.SetUIReferences(powerImage, powerText);
     }
 
-
     void Update()
     {
-        // Firing 상태일 때만 모든 행동을 멈춥니다.
         if (currentState == PlayerState.Firing) return;
-
-        // Waiting 상태일 때는 중력 계산만 하고, 다른 로직은 실행하지 않습니다.
         if (currentState == PlayerState.Waiting)
         {
-            playerMovement.UpdatePhysics(); // 중력만 처리
+            playerMovement.UpdatePhysics();
             return;
         }
 
-        // 이동 상태가 아닐 때 타이머 작동
         if (currentState != PlayerState.Moving)
         {
             currentStageTimer -= Time.deltaTime;
@@ -100,11 +92,10 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // 상태별 로직 처리
         switch (currentState)
         {
             case PlayerState.Moving:
-                playerMovement.HandleMovement(); // 키보드 입력 + 중력 모두 처리
+                playerMovement.HandleMovement();
                 if (trajectory != null) trajectory.HideTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
                 {
@@ -112,40 +103,28 @@ public class PlayerController : MonoBehaviour
                 }
                 break;
             case PlayerState.SelectingProjectile:
-                playerMovement.UpdatePhysics(); // 중력만 처리
+                playerMovement.UpdatePhysics();
                 HandleProjectileSelection();
                 break;
             case PlayerState.AimingVertical:
-                playerMovement.UpdatePhysics(); // 중력만 처리
+                playerMovement.UpdatePhysics();
                 playerAiming.HandleVerticalAim();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.AimingHorizontal:
-                playerMovement.UpdatePhysics(); // 중력만 처리
+                playerMovement.UpdatePhysics();
                 playerAiming.HandleHorizontalAim();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.SettingPower:
-                playerMovement.UpdatePhysics(); // 중력만 처리
+                playerMovement.UpdatePhysics();
                 playerShooting.HandlePowerSetting();
                 if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
                 break;
         }
-    }
-    public void StartTurn()
-    {
-        playerMovement.ResetStamina();
-        SetPlayerState(PlayerState.Moving);
-        Debug.Log($"Player {playerID}의 턴 시작! [이동 모드]");
-    }
-
-    public void EndTurn()
-    {
-        SetPlayerState(PlayerState.Waiting);
-        Debug.Log($"Player {playerID}의 턴 종료!");
     }
 
     void SetPlayerState(PlayerState newState)
@@ -161,28 +140,41 @@ public class PlayerController : MonoBehaviour
             currentStageTimer = stageTimeLimit;
         }
 
-        if (mainCameraController != null)
+        /* GameManager에 카메라 모드 변경을 요청합니다.
+        if (GameManager.instance != null)
         {
-            mainCameraController.SetTarget(this.transform);
             switch (newState)
             {
                 case PlayerState.Moving:
                 case PlayerState.SelectingProjectile:
-                    mainCameraController.SwitchMode(CameraController.CameraMode.Default);
+                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.Default);
                     break;
                 case PlayerState.AimingVertical:
-                    mainCameraController.SwitchMode(CameraController.CameraMode.SideView);
+                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.SideView);
                     break;
                 case PlayerState.AimingHorizontal:
                 case PlayerState.SettingPower:
-                    mainCameraController.SwitchMode(CameraController.CameraMode.TopDownView);
+                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.TopDownView);
                     break;
                 case PlayerState.Firing:
                 case PlayerState.Waiting:
-                    mainCameraController.SwitchMode(CameraController.CameraMode.Default);
+                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.Default);
                     break;
             }
-        }
+        }*/
+    }
+
+    public void StartTurn()
+    {
+        playerMovement.ResetStamina();
+        SetPlayerState(PlayerState.Moving);
+        Debug.Log($"Player {playerID}의 턴 시작! [이동 모드]");
+    }
+
+    public void EndTurn()
+    {
+        SetPlayerState(PlayerState.Waiting);
+        Debug.Log($"Player {playerID}의 턴 종료!");
     }
 
     void TransitionToNextStage(bool isTimedOut)

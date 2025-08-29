@@ -1,3 +1,5 @@
+// Scripts.zip/GameManager/GameManager.cs
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,6 +12,9 @@ public class GameManager : MonoBehaviour
 
     public List<PlayerController> players;
     private int currentPlayerIndex = 0;
+
+    [Header("카메라 컨트롤러")]
+    public CameraController mainCameraController; // [추가] 인스펙터에서 메인 카메라를 직접 할당해 주세요.
 
     [Header("게임 종료 조건")]
     public int minPlayersForGame = 2;
@@ -40,6 +45,12 @@ public class GameManager : MonoBehaviour
             instance = this;
         }
 
+        // 인스펙터에서 할당되지 않았을 경우를 대비해 한번 더 찾아봅니다.
+        if (mainCameraController == null)
+        {
+            mainCameraController = Camera.main.GetComponent<CameraController>();
+        }
+
         if (OnTurnStart == null) OnTurnStart = new UnityEvent<int>();
         if (OnTurnEnd == null) OnTurnEnd = new UnityEvent<int>();
         if (OnGameStateChanged == null) OnGameStateChanged = new UnityEvent<GameState>();
@@ -60,10 +71,9 @@ public class GameManager : MonoBehaviour
     {
         SetGameState(GameState.PreGame);
 
-        // 모든 플레이어를 Waiting 상태로 시작시킵니다.
         foreach (var player in players)
         {
-            if (player != null) player.EndTurn(); // EndTurn()은 Waiting 상태로 만듭니다.
+            if (player != null) player.EndTurn();
         }
 
         StartCoroutine(StartGameAfterDelay(1.5f));
@@ -74,7 +84,13 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         PlayerController firstPlayer = players[currentPlayerIndex];
-        firstPlayer.StartTurn(); // 스크립트를 켜는 대신, 턴 시작만 알립니다.
+        firstPlayer.StartTurn();
+
+        // 첫 번째 플레이어로 카메라 타겟 설정
+        if (mainCameraController != null)
+        {
+            mainCameraController.SetTarget(firstPlayer.transform);
+        }
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);
@@ -95,8 +111,7 @@ public class GameManager : MonoBehaviour
         PlayerController previousPlayer = players[currentPlayerIndex];
         if (previousPlayer != null)
         {
-            previousPlayer.EndTurn(); // 이전 플레이어는 Waiting 상태로 전환
-            // previousPlayer.enabled = false; // 이 줄을 삭제합니다.
+            previousPlayer.EndTurn();
             OnTurnEnd.Invoke(previousPlayer.playerID);
         }
 
@@ -121,13 +136,28 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         PlayerController nextPlayer = players[currentPlayerIndex];
-        // nextPlayer.enabled = true; // 이 줄을 삭제합니다.
-        nextPlayer.StartTurn(); // 다음 플레이어에게 턴 시작을 알립니다.
+        nextPlayer.StartTurn();
+
+        // 다음 플레이어로 카메라 타겟 설정
+        if (mainCameraController != null)
+        {
+            mainCameraController.SetTarget(nextPlayer.transform);
+        }
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
         Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!");
     }
+
+    /* [추가] PlayerController가 카메라 모드 변경을 요청할 수 있는 함수
+    public void RequestCameraModeChange(CameraController.CameraMode newMode)
+    {
+        if (mainCameraController != null)
+        {
+            mainCameraController.SwitchMode(newMode);
+        }
+    }
+    */
 
     private bool CheckGameOverCondition()
     {

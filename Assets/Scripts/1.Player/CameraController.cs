@@ -2,56 +2,106 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    public enum CameraMode { Default, SideView, TopDownView }
-    private CameraMode currentMode;
-
+    // [삭제] CameraMode Enum과 관련 변수들을 모두 삭제합니다.
     private Transform target;
 
-    [Header("기본 모드 설정")]
-    public Vector3 defaultOffset = new Vector3(0, 5f, -6f);
-    public float defaultSmoothSpeed = 5f;
+    [Header("카메라 기본 설정")]
+    public CameraModeSettings defaultSettings = new CameraModeSettings { distance = 7.0f, yaw = 0.0f, pitch = 20.0f, lookAtOffset = new Vector3(0, 1.5f, 0) };
 
-    [Header("측면(수직 조준) 모드 설정")]
-    public Vector3 sideViewOffset = new Vector3(-5f, 2f, 0f);
-    public float sideViewSmoothSpeed = 10f;
+    // [삭제] sideViewSettings, topDownSettings를 삭제합니다.
 
-    [Header("탑다운(수평 조준) 모드 설정")]
-    public Vector3 topDownOffset = new Vector3(0f, 10f, 0f);
-    public float topDownSmoothSpeed = 10f;
+    [Header("마우스 조작 설정")]
+    public float freeLook_x_Speed = 120.0f;
+    public float freeLook_y_Speed = 120.0f;
+    public float yMinLimit = -20f;
+    public float yMaxLimit = 89f;
+
+    [Header("시점 피봇(앵글 조정) 설정")]
+    public float pivotPanSpeed = 2.0f;
+    public float maxPivotOffset = 5.0f;
+
+    [Header("카메라 부드러움 설정")]
+    public float rotationDamping = 8.0f;
+    public float transitionDamping = 8.0f;
+    public float pivotReturnDamping = 5.0f;
+
+    private float currentX = 0.0f;
+    private float currentY = 0.0f;
+    private Vector3 lookAtPivot = Vector3.zero;
+
+    // [구조체 선언은 유지]
+    [System.Serializable]
+    public struct CameraModeSettings
+    {
+        public float distance;
+        public float yaw;
+        public float pitch;
+        public Vector3 lookAtOffset;
+    }
 
     void LateUpdate()
     {
         if (target == null) return;
 
-        switch (currentMode)
+        // [수정] 모드 전환 없이 항상 defaultSettings를 사용합니다.
+        CameraModeSettings currentSettings = defaultSettings;
+
+        // --- 입력 처리 ---
+        if (Input.GetMouseButton(1)) // 위치 회전 (우클릭)
         {
-            case CameraMode.Default:
-                Vector3 desiredPosDefault = target.position + target.rotation * defaultOffset;
-                transform.position = Vector3.Lerp(transform.position, desiredPosDefault, defaultSmoothSpeed * Time.deltaTime);
-                transform.LookAt(target);
-                break;
-
-            case CameraMode.SideView:
-                Vector3 desiredPosSide = target.position + (target.right * sideViewOffset.x) + (Vector3.up * sideViewOffset.y) + (target.forward * sideViewOffset.z);
-                transform.position = Vector3.Lerp(transform.position, desiredPosSide, sideViewSmoothSpeed * Time.deltaTime);
-                transform.LookAt(target.position + Vector3.up * 1.5f);
-                break;
-
-            case CameraMode.TopDownView:
-                Vector3 desiredPosTop = target.position + topDownOffset;
-                transform.position = Vector3.Lerp(transform.position, desiredPosTop, topDownSmoothSpeed * Time.deltaTime);
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(90, target.eulerAngles.y, 0), topDownSmoothSpeed * Time.deltaTime);
-                break;
+            currentX += Input.GetAxis("Mouse X") * freeLook_x_Speed * Time.deltaTime;
+            currentY -= Input.GetAxis("Mouse Y") * freeLook_y_Speed * Time.deltaTime;
+            currentY = ClampAngle(currentY, yMinLimit, yMaxLimit);
         }
+        else // 기본 위치로 복귀
+        {
+            float desiredYaw = target.eulerAngles.y + currentSettings.yaw;
+            currentX = Mathf.LerpAngle(currentX, desiredYaw, rotationDamping * Time.deltaTime);
+            currentY = Mathf.LerpAngle(currentY, currentSettings.pitch, rotationDamping * Time.deltaTime);
+        }
+
+        if (Input.GetMouseButton(2)) // 앵글 조정 (휠 클릭)
+        {
+            float panX = -Input.GetAxis("Mouse X") * pivotPanSpeed * Time.deltaTime;
+            float panY = -Input.GetAxis("Mouse Y") * pivotPanSpeed * Time.deltaTime;
+            lookAtPivot += transform.right * panX + transform.up * panY;
+            Vector3 relativePivot = lookAtPivot - currentSettings.lookAtOffset;
+            lookAtPivot = currentSettings.lookAtOffset + Vector3.ClampMagnitude(relativePivot, maxPivotOffset);
+        }
+        else // 앵글 중심으로 복귀
+        {
+            lookAtPivot = Vector3.Lerp(lookAtPivot, currentSettings.lookAtOffset, pivotReturnDamping * Time.deltaTime);
+        }
+
+        // --- 최종 위치 및 회전 계산 ---
+        Quaternion positionRotation = Quaternion.Euler(currentY, currentX, 0);
+        Vector3 desiredPosition = (target.position + currentSettings.lookAtOffset) - (positionRotation * Vector3.forward * currentSettings.distance);
+        Vector3 lookAtPoint = target.position + lookAtPivot;
+        Quaternion desiredRotation = Quaternion.LookRotation(lookAtPoint - transform.position);
+
+        // --- 변환 적용 ---
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, transitionDamping * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationDamping * Time.deltaTime);
     }
 
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+        if (target != null)
+        {
+            // 타겟이 설정되면 defaultSettings 값으로 카메라를 초기화합니다.
+            currentX = target.eulerAngles.y + defaultSettings.yaw;
+            currentY = defaultSettings.pitch;
+            lookAtPivot = defaultSettings.lookAtOffset;
+        }
     }
 
-    public void SwitchMode(CameraMode mode)
+    // [삭제] SwitchMode 함수를 삭제합니다.
+
+    static float ClampAngle(float angle, float min, float max)
     {
-        currentMode = mode;
+        if (angle < -360) angle += 360;
+        if (angle > 360) angle -= 360;
+        return Mathf.Clamp(angle, min, max);
     }
 }

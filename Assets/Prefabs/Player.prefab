@@ -615,9 +615,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: beb5ec5d91029a34887ba056a27aa3e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
-  rotationSpeed: 10
+  acceleration: 15
+  maxSpeed: 10
+  turnSpeed: 100
   gravityValue: -9.81
+  deceleration: 10
+  slopeAdaptSpeed: 10
+  slopeRaycastLength: 1.5
+  slopeResistance: 0.5
+  resistanceAdaptSpeed: 5
   maxStamina: 100
   staminaDrainRate: 20
   currentStamina: 0
@@ -638,7 +644,7 @@ MonoBehaviour:
   verticalAimSpeed: 20
   horizontalAimSpeed: 30
   maxAimAngle: 45
-  minAimAngle: -20
+  minAimAngle: -80
   currentVerticalAngle: 0
 --- !u!114 &4231770935585223979
 MonoBehaviour:
