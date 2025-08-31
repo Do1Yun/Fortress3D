@@ -9,6 +9,7 @@ public enum ProjectileType
 
 public class Projectile : MonoBehaviour
 {
+
     [Header("포탄 공통 설정")]
     public ProjectileType type;
     public float lifeTime = 5.0f;
@@ -20,7 +21,23 @@ public class Projectile : MonoBehaviour
     public float explosionForce = 500f;
 
     private bool hasExploded = false;
+    private Rigidbody rb;
 
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
+    // FixedUpdate는 물리 효과를 적용하기에 가장 좋은 곳입니다.
+    void FixedUpdate()
+    {
+        // WindController가 존재하고, 이 오브젝트의 태그가 "Bullet"일 때만 힘을 적용합니다.
+        if (WindController.instance != null && gameObject.CompareTag("Bullet"))
+        {
+            Vector3 windForce = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
+            rb.AddForce(windForce, ForceMode.Force);
+        }
+    }
     void Start()
     {
         Destroy(gameObject, lifeTime);

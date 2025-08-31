@@ -14,7 +14,6 @@ public class Trajectory : MonoBehaviour
     private float timeStep;
     private Transform firePoint;
     private LineRenderer lr;
-    private WindZone currentWindZone;
 
     void Awake()
     {
@@ -29,8 +28,6 @@ public class Trajectory : MonoBehaviour
         }
 
         firePoint = playerShooting.firePoint;
-
-        currentWindZone = FindObjectOfType<WindZone>();
     }
 
     public void ShowTrajectory()
@@ -57,9 +54,12 @@ public class Trajectory : MonoBehaviour
         Vector3 gravity = Physics.gravity;
         Vector3 windForce = Vector3.zero;
 
-        if (currentWindZone != null)
+        // ★★★★★ 핵심 수정 부분 ★★★★★
+        // WindManager 대신 새로 만든 WindController가 존재하는지 확인합니다.
+        if (WindController.instance != null)
         {
-            float projectileMass = 1.0f;
+            float projectileMass = 1.0f; // 기본 질량
+            // 현재 선택된 포탄 프리팹을 가져옵니다. (이제 "Bullet" 태그가 필요 없습니다)
             GameObject currentPrefab = playerShooting.GetCurrentProjectilePrefab();
             if (currentPrefab != null)
             {
@@ -72,7 +72,9 @@ public class Trajectory : MonoBehaviour
 
             if (projectileMass > 0)
             {
-                Vector3 windVector = currentWindZone.windDirection.normalized * currentWindZone.windStrength;
+                // WindController로부터 현재 전역 바람 정보를 가져옵니다.
+                Vector3 windVector = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
+                // 질량을 고려하여 바람의 가속도를 계산합니다.
                 windForce = windVector / projectileMass;
             }
         }
@@ -80,11 +82,14 @@ public class Trajectory : MonoBehaviour
         for (int i = 0; i < resolution; i++)
         {
             float t = i * timeStep;
+            // 중력과 바람의 힘을 합산한 총 가속도를 계산합니다.
             Vector3 totalAcceleration = gravity + windForce;
+            // 포물선 운동 공식을 사용하여 시간 t에서의 위치를 계산합니다.
             points[i] = startPosition + initialVelocity * t + 0.5f * totalAcceleration * t * t;
 
             if (i > 0)
             {
+                // 충돌 지점을 계산하여 궤적이 지형을 뚫지 않도록 합니다.
                 if (Physics.Linecast(points[i - 1], points[i], out RaycastHit hit, LayerMask.GetMask("Ground")))
                 {
                     points[i] = hit.point;

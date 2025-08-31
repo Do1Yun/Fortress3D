@@ -107,7 +107,10 @@ public class GameManager : MonoBehaviour
     public void SwitchToNextTurn()
     {
         SetGameState(GameState.TurnEnd);
-
+        if (WindController.instance != null)
+        {
+            WindController.instance.ChangeWind();
+        }
         PlayerController previousPlayer = players[currentPlayerIndex];
         if (previousPlayer != null)
         {
