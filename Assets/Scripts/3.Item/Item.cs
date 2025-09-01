@@ -86,6 +86,7 @@ public class Item : MonoBehaviour
         {
             case ItemType.Health:
                 playerMovement.maxStamina *= 2;
+                // playerMovement.staminaDrainRate /= 2; 로 할까 고민중
                 break;
 
             case ItemType.Range:
