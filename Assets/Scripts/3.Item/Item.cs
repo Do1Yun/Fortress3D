@@ -7,8 +7,8 @@ using UnityEngine;
 public enum ItemType
 {
     Health,
-    Speed,
-    Attack
+    Range,
+    TurnOff
 }
 
 [RequireComponent(typeof(CharacterController))]
@@ -19,9 +19,18 @@ public class Item : MonoBehaviour
     // 중력 값을 설정합니다.
     public float gravityValue = -9.81f;
 
+    private GameManager gameManager;
     private CharacterController characterController;
     private MeshRenderer meshRenderer;
     private Vector3 itemVelocity;
+
+    private void Start()
+    {
+        gameManager = FindObjectOfType<GameManager>();
+
+        if (gameManager == null)
+            Debug.LogError("GameManager를 찾을 수 없습니다!");
+    }
 
     void Awake()
     {
@@ -32,8 +41,8 @@ public class Item : MonoBehaviour
         switch (itemtype)
         {
             case ItemType.Health: meshRenderer.material.color = Color.red; break;
-            case ItemType.Speed: meshRenderer.material.color = Color.green; break;
-            case ItemType.Attack: meshRenderer.material.color = Color.blue; break;
+            case ItemType.Range: meshRenderer.material.color = Color.green; break;
+            case ItemType.TurnOff: meshRenderer.material.color = Color.blue; break;
         }
     }
 
@@ -69,21 +78,23 @@ public class Item : MonoBehaviour
 
     public void ApplyEffect(GameObject player)
     {
-        // TankController tank = player.GetComponent<TankController>();
+        PlayerMovement playerMovement = player.GetComponent<PlayerMovement>();
+        PlayerController Player = gameManager.players[gameManager.currentPlayerIndex];
+        PlayerController nextPlayer = gameManager.players[(gameManager.currentPlayerIndex + 1) % 2];
 
-        // switch (itemType)
-        // {
-        //     case ItemType.Health:
-        //         tank.hp = Mathf.Min(tank.maxHp, tank.hp + effectValue);
-        //         break;
+        switch (itemtype)
+        {
+            case ItemType.Health:
+                playerMovement.maxStamina *= 2;
+                break;
 
-        //     case ItemType.Speed:
-        //         tank.moveSpeed += effectValue;
-        //         break;
+            case ItemType.Range:
+                Player.ExplosionRange *= 2;
+                break;
 
-        //     case ItemType.Attack:
-        //         tank.attackPower += effectValue;
-        //         break;
-        // }
+            case ItemType.TurnOff:
+                nextPlayer.trajectory.isPainted = false;
+                break;
+        }
     }
 }

@@ -113,6 +113,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemtype: 0
   gravityValue: -9.81
+  gameManager: {fileID: 0}
 --- !u!143 &-333038408686475483
 CharacterController:
   m_ObjectHideFlags: 0

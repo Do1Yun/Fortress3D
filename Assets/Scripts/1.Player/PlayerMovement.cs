@@ -4,22 +4,23 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("ì´ë™ ì„¤ì •")]
+    [Header("?´?™ ?„¤? •")]
     public float acceleration = 15.0f;
     public float maxSpeed = 10.0f;
     public float turnSpeed = 100.0f;
     public float gravityValue = -9.81f;
     public float deceleration = 10f;
 
-    [Header("ê²½ì‚¬ë©´ ì„¤ì •")]
+    [Header("ê²½ì‚¬ë©? ?„¤? •")]
     public float slopeAdaptSpeed = 10f;
     public float slopeRaycastLength = 1.5f;
     public float slopeResistance = 0.5f;
     public float resistanceAdaptSpeed = 5f;
 
-    [Header("ìŠ¤í…Œë¯¸ë„ˆ ì„¤ì •")]
+    [Header("?Š¤?…Œë¯¸ë„ˆ ?„¤? •")]
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
+    public float basicStamina = 100f;
     [HideInInspector] public float currentStamina;
 
     private Image staminaImage;
@@ -47,7 +48,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// ì´ë™ í„´ì— í˜¸ì¶œ: í‚¤ë³´ë“œ ì…ë ¥, ì¤‘ë ¥, ê²½ì‚¬ë©´ ì ì‘ì„ ëª¨ë‘ ì²˜ë¦¬í•©ë‹ˆë‹¤.
+    /// ?´?™ ?„´?— ?˜¸ì¶?: ?‚¤ë³´ë“œ ?…? ¥, ì¤‘ë ¥, ê²½ì‚¬ë©? ? ?‘?„ ëª¨ë‘ ì²˜ë¦¬?•©?‹ˆ?‹¤.
     /// </summary>
     public void HandleMovement()
     {
@@ -56,25 +57,25 @@ public class PlayerMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// ì´ë™ í„´ì´ ì•„ë‹ ë•Œ í˜¸ì¶œ: ì¤‘ë ¥ê³¼ ê²½ì‚¬ë©´ ì ì‘ë§Œ ì²˜ë¦¬í•˜ì—¬ ì œìë¦¬ë¥¼ ì§€í‚µë‹ˆë‹¤.
+    /// ?´?™ ?„´?´ ?•„?‹ ?•Œ ?˜¸ì¶?: ì¤‘ë ¥ê³? ê²½ì‚¬ë©? ? ?‘ë§? ì²˜ë¦¬?•˜?—¬ ? œ?ë¦¬ë?? ì§??‚µ?‹ˆ?‹¤.
     /// </summary>
     public void UpdatePhysics()
     {
-        // ì†ë„ë¥¼ ì„œì„œíˆ 0ìœ¼ë¡œ ì¤„ì…ë‹ˆë‹¤.
+        // ?†?„ë¥? ?„œ?„œ?ˆ 0?œ¼ë¡? ì¤„ì…?‹ˆ?‹¤.
         currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
         ApplyGravityAndSlope();
     }
 
     private void ApplyGravityAndSlope()
     {
-        // ì¤‘ë ¥ ì ìš©
+        // ì¤‘ë ¥ ? ?š©
         if (characterController.isGrounded && playerVelocity.y < 0)
         {
             playerVelocity.y = -2f;
         }
         playerVelocity.y += gravityValue * Time.deltaTime;
 
-        // ê²½ì‚¬ë©´ ì ì‘
+        // ê²½ì‚¬ë©? ? ?‘
         RaycastHit hit;
         if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
         {
@@ -82,7 +83,7 @@ public class PlayerMovement : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
         }
 
-        // ìµœì¢… ì´ë™ ì ìš©
+        // ìµœì¢… ?´?™ ? ?š©
         Vector3 moveDirection = transform.forward * currentSpeed;
         characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
     }

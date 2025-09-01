@@ -11,10 +11,11 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
 
     public List<PlayerController> players;
-    private int currentPlayerIndex = 0;
+    public List<PlayerMovement> players_movement;
+    public int currentPlayerIndex = 0;
 
-    [Header("ì¹´ë©”ë¼ ì»¨íŠ¸ë¡¤ëŸ¬")]
-    public CameraController mainCameraController; // [ì¶”ê°€] ì¸ìŠ¤í™í„°ì—ì„œ ë©”ì¸ ì¹´ë©”ë¼ë¥¼ ì§ì ‘ í• ë‹¹í•´ ì£¼ì„¸ìš”.
+    [Header("ì¹´ë©”?¼ ì»¨íŠ¸ë¡¤ëŸ¬")]
+    public CameraController mainCameraController; // [ì¶”ê??] ?¸?Š¤?™?„°?—?„œ ë©”ì¸ ì¹´ë©”?¼ë¥? ì§ì ‘ ?• ?‹¹?•´ ì£¼ì„¸?š”.
 
     [Header("ê²Œì„ ì¢…ë£Œ ì¡°ê±´")]
     public int minPlayersForGame = 2;
@@ -45,7 +46,7 @@ public class GameManager : MonoBehaviour
             instance = this;
         }
 
-        // ì¸ìŠ¤í™í„°ì—ì„œ í• ë‹¹ë˜ì§€ ì•Šì•˜ì„ ê²½ìš°ë¥¼ ëŒ€ë¹„í•´ í•œë²ˆ ë” ì°¾ì•„ë´…ë‹ˆë‹¤.
+        // ?¸?Š¤?™?„°?—?„œ ?• ?‹¹?˜ì§? ?•Š?•˜?„ ê²½ìš°ë¥? ???ë¹„í•´ ?•œë²? ?” ì°¾ì•„ë´…ë‹ˆ?‹¤.
         if (mainCameraController == null)
         {
             mainCameraController = Camera.main.GetComponent<CameraController>();
@@ -61,7 +62,7 @@ public class GameManager : MonoBehaviour
     {
         if (players == null || players.Count < minPlayersForGame)
         {
-            Debug.LogError($"GameManagerì— ë“±ë¡ëœ í”Œë ˆì´ì–´ê°€ ë¶€ì¡±í•©ë‹ˆë‹¤! ê²Œì„ì„ ì‹œì‘í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.", this);
+            Debug.LogError($"GameManager?— ?“±ë¡ëœ ?”Œ? ˆ?´?–´ê°? ë¶?ì¡±í•©?‹ˆ?‹¤! ê²Œì„?„ ?‹œ?‘?•  ?ˆ˜ ?—†?Šµ?‹ˆ?‹¤.", this);
             return;
         }
         InitializeGame();
@@ -86,7 +87,7 @@ public class GameManager : MonoBehaviour
         PlayerController firstPlayer = players[currentPlayerIndex];
         firstPlayer.StartTurn();
 
-        // ì²« ë²ˆì§¸ í”Œë ˆì´ì–´ë¡œ ì¹´ë©”ë¼ íƒ€ê²Ÿ ì„¤ì •
+        // ì²? ë²ˆì§¸ ?”Œ? ˆ?´?–´ë¡? ì¹´ë©”?¼ ???ê²? ?„¤? •
         if (mainCameraController != null)
         {
             mainCameraController.SetTarget(firstPlayer.transform);
@@ -94,7 +95,7 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);
-        Debug.Log($"Player {firstPlayer.playerID}ì˜ í„´ ì‹œì‘!");
+        Debug.Log($"Player {firstPlayer.playerID}?˜ ?„´ ?‹œ?‘!");
     }
 
     public void SetGameState(GameState newState)
@@ -117,6 +118,8 @@ public class GameManager : MonoBehaviour
             previousPlayer.EndTurn();
             OnTurnEnd.Invoke(previousPlayer.playerID);
         }
+
+        Item_Reset(); // ¾ÆÀÌÅÛ ¿µÇâ ÃÊ±âÈ­
 
         currentPlayerIndex++;
         if (currentPlayerIndex >= players.Count)
@@ -141,7 +144,7 @@ public class GameManager : MonoBehaviour
         PlayerController nextPlayer = players[currentPlayerIndex];
         nextPlayer.StartTurn();
 
-        // ë‹¤ìŒ í”Œë ˆì´ì–´ë¡œ ì¹´ë©”ë¼ íƒ€ê²Ÿ ì„¤ì •
+        // ?‹¤?Œ ?”Œ? ˆ?´?–´ë¡? ì¹´ë©”?¼ ???ê²? ?„¤? •
         if (mainCameraController != null)
         {
             mainCameraController.SetTarget(nextPlayer.transform);
@@ -149,10 +152,10 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
-        Debug.Log($"Player {nextPlayer.playerID}ì˜ í„´ ì‹œì‘!");
+        Debug.Log($"Player {nextPlayer.playerID}?˜ ?„´ ?‹œ?‘!");
     }
 
-    /* [ì¶”ê°€] PlayerControllerê°€ ì¹´ë©”ë¼ ëª¨ë“œ ë³€ê²½ì„ ìš”ì²­í•  ìˆ˜ ìˆëŠ” í•¨ìˆ˜
+    /* [ì¶”ê??] PlayerControllerê°? ì¹´ë©”?¼ ëª¨ë“œ ë³?ê²½ì„ ?š”ì²??•  ?ˆ˜ ?ˆ?Š” ?•¨?ˆ˜
     public void RequestCameraModeChange(CameraController.CameraMode newMode)
     {
         if (mainCameraController != null)
@@ -179,7 +182,7 @@ public class GameManager : MonoBehaviour
     {
         SetGameState(GameState.GameOver);
         OnGameOver.Invoke();
-        Debug.Log("--- ê²Œì„ ì˜¤ë²„! ---");
+        Debug.Log("--- ê²Œì„ ?˜¤ë²?! ---");
         StartCoroutine(RestartGameAfterDelay(3.0f));
     }
 
@@ -206,5 +209,12 @@ public class GameManager : MonoBehaviour
         {
             players.Remove(deadPlayer);
         }
+    }
+
+    void Item_Reset() // ÅÏÀÌ ³Ñ¾î°¡¸é ¾ÆÀÌÅÛ ¿µÇâ ÃÊ±âÈ­
+    {
+        players[currentPlayerIndex].trajectory.isPainted = true;
+        players_movement[currentPlayerIndex].maxStamina = players_movement[currentPlayerIndex].basicStamina;
+        players[currentPlayerIndex].ExplosionRange = players[currentPlayerIndex].BasicExplosionRange;
     }
 }

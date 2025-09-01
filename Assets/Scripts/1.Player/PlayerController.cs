@@ -32,6 +32,8 @@ public class PlayerController : MonoBehaviour
 
     [Header("포탄 데이터")]
     public List<ProjectileData> projectileDatabase;
+    public float BasicExplosionRange = 5.0f;
+    public float ExplosionRange = 5.0f;
     private List<ProjectileData> currentSelection = new List<ProjectileData>();
     private ProjectileData selectedProjectile;
 

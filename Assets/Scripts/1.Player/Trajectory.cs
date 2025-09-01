@@ -6,10 +6,11 @@ public class Trajectory : MonoBehaviour
     public PlayerController playerControl;
     public PlayerShooting playerShooting;
 
-    [Header("ì¡°ì¤€ì„  ì„¤ì •")]
+    [Header("ì¡°ì???„  ?„¤? •")]
     public int resolution = 30;
     public float maxTime = 2.0f;
     public Gradient lineColor;
+    public bool isPainted = true;
 
     private float timeStep;
     private Transform firePoint;
@@ -45,6 +46,8 @@ public class Trajectory : MonoBehaviour
 
     void DrawTrajectory()
     {
+        if(!isPainted) return;
+        
         Vector3[] points = new Vector3[resolution];
         Vector3 startPosition = firePoint.position;
 
@@ -54,12 +57,12 @@ public class Trajectory : MonoBehaviour
         Vector3 gravity = Physics.gravity;
         Vector3 windForce = Vector3.zero;
 
-        // â˜…â˜…â˜…â˜…â˜… í•µì‹¬ ìˆ˜ì • ë¶€ë¶„ â˜…â˜…â˜…â˜…â˜…
-        // WindManager ëŒ€ì‹  ìƒˆë¡œ ë§Œë“  WindControllerê°€ ì¡´ì¬í•˜ëŠ”ì§€ í™•ì¸í•©ë‹ˆë‹¤.
+        // ?˜…?˜…?˜…?˜…?˜… ?•µ?‹¬ ?ˆ˜? • ë¶?ë¶? ?˜…?˜…?˜…?˜…?˜…
+        // WindManager ????‹  ?ƒˆë¡? ë§Œë“  WindControllerê°? ì¡´ì¬?•˜?Š”ì§? ?™•?¸?•©?‹ˆ?‹¤.
         if (WindController.instance != null)
         {
             float projectileMass = 1.0f; // ê¸°ë³¸ ì§ˆëŸ‰
-            // í˜„ì¬ ì„ íƒëœ í¬íƒ„ í”„ë¦¬íŒ¹ì„ ê°€ì ¸ì˜µë‹ˆë‹¤. (ì´ì œ "Bullet" íƒœê·¸ê°€ í•„ìš” ì—†ìŠµë‹ˆë‹¤)
+            // ?˜„?¬ ?„ ?ƒ?œ ?¬?ƒ„ ?”„ë¦¬íŒ¹?„ ê°?? ¸?˜µ?‹ˆ?‹¤. (?´? œ "Bullet" ?ƒœê·¸ê?? ?•„?š” ?—†?Šµ?‹ˆ?‹¤)
             GameObject currentPrefab = playerShooting.GetCurrentProjectilePrefab();
             if (currentPrefab != null)
             {
@@ -72,9 +75,9 @@ public class Trajectory : MonoBehaviour
 
             if (projectileMass > 0)
             {
-                // WindControllerë¡œë¶€í„° í˜„ì¬ ì „ì—­ ë°”ëŒ ì •ë³´ë¥¼ ê°€ì ¸ì˜µë‹ˆë‹¤.
+                // WindControllerë¡œë???„° ?˜„?¬ ? „?—­ ë°”ëŒ ? •ë³´ë?? ê°?? ¸?˜µ?‹ˆ?‹¤.
                 Vector3 windVector = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
-                // ì§ˆëŸ‰ì„ ê³ ë ¤í•˜ì—¬ ë°”ëŒì˜ ê°€ì†ë„ë¥¼ ê³„ì‚°í•©ë‹ˆë‹¤.
+                // ì§ˆëŸ‰?„ ê³ ë ¤?•˜?—¬ ë°”ëŒ?˜ ê°??†?„ë¥? ê³„ì‚°?•©?‹ˆ?‹¤.
                 windForce = windVector / projectileMass;
             }
         }
@@ -82,14 +85,14 @@ public class Trajectory : MonoBehaviour
         for (int i = 0; i < resolution; i++)
         {
             float t = i * timeStep;
-            // ì¤‘ë ¥ê³¼ ë°”ëŒì˜ í˜ì„ í•©ì‚°í•œ ì´ ê°€ì†ë„ë¥¼ ê³„ì‚°í•©ë‹ˆë‹¤.
+            // ì¤‘ë ¥ê³? ë°”ëŒ?˜ ?˜?„ ?•©?‚°?•œ ì´? ê°??†?„ë¥? ê³„ì‚°?•©?‹ˆ?‹¤.
             Vector3 totalAcceleration = gravity + windForce;
-            // í¬ë¬¼ì„  ìš´ë™ ê³µì‹ì„ ì‚¬ìš©í•˜ì—¬ ì‹œê°„ tì—ì„œì˜ ìœ„ì¹˜ë¥¼ ê³„ì‚°í•©ë‹ˆë‹¤.
+            // ?¬ë¬¼ì„  ?š´?™ ê³µì‹?„ ?‚¬?š©?•˜?—¬ ?‹œê°? t?—?„œ?˜ ?œ„ì¹˜ë?? ê³„ì‚°?•©?‹ˆ?‹¤.
             points[i] = startPosition + initialVelocity * t + 0.5f * totalAcceleration * t * t;
 
             if (i > 0)
             {
-                // ì¶©ëŒ ì§€ì ì„ ê³„ì‚°í•˜ì—¬ ê¶¤ì ì´ ì§€í˜•ì„ ëš«ì§€ ì•Šë„ë¡ í•©ë‹ˆë‹¤.
+                // ì¶©ëŒ ì§?? ?„ ê³„ì‚°?•˜?—¬ ê¶¤ì ?´ ì§??˜•?„ ?š«ì§? ?•Š?„ë¡? ?•©?‹ˆ?‹¤.
                 if (Physics.Linecast(points[i - 1], points[i], out RaycastHit hit, LayerMask.GetMask("Ground")))
                 {
                     points[i] = hit.point;

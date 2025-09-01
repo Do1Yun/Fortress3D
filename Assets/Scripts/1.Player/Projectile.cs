@@ -13,7 +13,7 @@ public class Projectile : MonoBehaviour
     [Header("포탄 공통 설정")]
     public ProjectileType type;
     public float lifeTime = 5.0f;
-    public float explosionRadius = 5.0f;
+    public float explosionRadius;
     public GameObject explosionEffectPrefab;
 
     [Header("타입별 설정")]
@@ -22,6 +22,7 @@ public class Projectile : MonoBehaviour
 
     private bool hasExploded = false;
     private Rigidbody rb;
+    private GameManager gameManager;
 
     void Awake()
     {
@@ -40,6 +41,14 @@ public class Projectile : MonoBehaviour
     }
     void Start()
     {
+        gameManager = FindObjectOfType<GameManager>();
+
+        if (gameManager == null)
+            Debug.LogError("GameManager를 찾을 수 없습니다!");
+
+        PlayerController player = gameManager.players[gameManager.currentPlayerIndex];
+        explosionRadius = player.ExplosionRange;
+
         Destroy(gameObject, lifeTime);
     }
 
