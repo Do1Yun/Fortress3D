@@ -20,8 +20,6 @@ public class GameManager : MonoBehaviour
     [Header("ê²Œìž„ ì¢…ë£Œ ì¡°ê±´")]
     public int minPlayersForGame = 2;
 
-    [Header("UI ¿¬°á")]
-    public WindCompassUI windCompass;
     public enum GameState
     {
         PreGame,
@@ -112,12 +110,7 @@ public class GameManager : MonoBehaviour
         SetGameState(GameState.TurnEnd);
         if (WindController.instance != null)
         {
-            WindController.instance.ChangeWind();
-            // WindCompassUI°¡ ¿¬°áµÇ¾î ÀÖ´Ù¸é, ·Î±× ÇÔ¼ö¸¦ È£ÃâÇÑ´Ù.
-            if (windCompass != null)
-            {
-                windCompass.LogRotationOnTurnChange();
-            }
+           
         }
         PlayerController previousPlayer = players[currentPlayerIndex];
         if (previousPlayer != null)
