@@ -19,6 +19,22 @@ public class PlayerShooting : MonoBehaviour
     [HideInInspector] public float currentLaunchPower;
     private bool isPowerIncreasing = true;
 
+    // ======== ▼▼▼ 1. 플레이어 자신의 콜라이더를 저장할 변수 추가 ▼▼▼ ========
+    private Collider playerCollider;
+
+    void Awake()
+    {
+        // 게임 시작 시 자신의 콜라이더를 찾아 변수에 저장해 둡니다.
+        // GetComponent<Collider>()는 이 스크립트가 붙어있는 오브젝트의 콜라이더를 찾습니다.
+        playerCollider = GetComponent<Collider>();
+        if (playerCollider == null)
+        {
+            // 만약 콜라이더가 자식 오브젝트에 있다면 GetComponentInChildren<Collider>()를 사용해야 합니다.
+            Debug.LogWarning("PlayerShooting 스크립트가 있는 오브젝트에서 Collider를 찾지 못했습니다.", this);
+        }
+    }
+    // =================================================================
+
     public void SetProjectile(GameObject prefab)
     {
         currentProjectilePrefab = prefab;
@@ -69,6 +85,18 @@ public class PlayerShooting : MonoBehaviour
 
         Debug.LogFormat("포탄 발사! (파워: {0:F1})", currentLaunchPower);
         GameObject projectileGO = Instantiate(currentProjectilePrefab, firePoint.position, firePoint.rotation);
+
+        // ======== ▼▼▼ 2. 충돌 무시 로직 추가 ▼▼▼ ========
+        Collider projectileCollider = projectileGO.GetComponent<Collider>();
+
+        // 플레이어 자신의 콜라이더와 방금 생성한 포탄의 콜라이더가 모두 존재한다면,
+        if (playerCollider != null && projectileCollider != null)
+        {
+            // 물리 엔진에게 이 둘 사이의 충돌을 무시하라고 명령합니다.
+            Physics.IgnoreCollision(projectileCollider, playerCollider);
+        }
+        // ==============================================
+
 
         Rigidbody rb = projectileGO.GetComponent<Rigidbody>();
         if (rb != null)
