@@ -14,10 +14,10 @@ public class GameManager : MonoBehaviour
     public List<PlayerMovement> players_movement;
     public int currentPlayerIndex = 0;
 
-    [Header("ì¹´ë©”?¼ ì»¨íŠ¸ë¡¤ëŸ¬")]
-    public CameraController mainCameraController; // [ì¶”ê??] ?¸?Š¤?™?„°?—?„œ ë©”ì¸ ì¹´ë©”?¼ë¥? ì§ì ‘ ?• ?‹¹?•´ ì£¼ì„¸?š”.
+    [Header("¸ŞÀÎÄ«¸Ş¶ó ÁöÁ¤")]
+    public CameraController mainCameraController; 
 
-    [Header("ê²Œì„ ì¢…ë£Œ ì¡°ê±´")]
+    [Header("ÇÃ·¹ÀÌ¾î ¼ö ÁöÁ¤")]
     public int minPlayersForGame = 2;
 
     [Header("UI ¿¬°á")]
@@ -48,7 +48,6 @@ public class GameManager : MonoBehaviour
             instance = this;
         }
 
-        // ?¸?Š¤?™?„°?—?„œ ?• ?‹¹?˜ì§? ?•Š?•˜?„ ê²½ìš°ë¥? ???ë¹„í•´ ?•œë²? ?” ì°¾ì•„ë´…ë‹ˆ?‹¤.
         if (mainCameraController == null)
         {
             mainCameraController = Camera.main.GetComponent<CameraController>();
@@ -64,7 +63,7 @@ public class GameManager : MonoBehaviour
     {
         if (players == null || players.Count < minPlayersForGame)
         {
-            Debug.LogError($"GameManager?— ?“±ë¡ëœ ?”Œ? ˆ?´?–´ê°? ë¶?ì¡±í•©?‹ˆ?‹¤! ê²Œì„?„ ?‹œ?‘?•  ?ˆ˜ ?—†?Šµ?‹ˆ?‹¤.", this);
+            Debug.LogError($"ÇÃ·¹ÀÌ¾î ¼ö ºÎÁ·.", this);
             return;
         }
         InitializeGame();
@@ -89,7 +88,6 @@ public class GameManager : MonoBehaviour
         PlayerController firstPlayer = players[currentPlayerIndex];
         firstPlayer.StartTurn();
 
-        // ì²? ë²ˆì§¸ ?”Œ? ˆ?´?–´ë¡? ì¹´ë©”?¼ ???ê²? ?„¤? •
         if (mainCameraController != null)
         {
             mainCameraController.SetTarget(firstPlayer.transform);
@@ -151,7 +149,6 @@ public class GameManager : MonoBehaviour
         PlayerController nextPlayer = players[currentPlayerIndex];
         nextPlayer.StartTurn();
 
-        // ?‹¤?Œ ?”Œ? ˆ?´?–´ë¡? ì¹´ë©”?¼ ???ê²? ?„¤? •
         if (mainCameraController != null)
         {
             mainCameraController.SetTarget(nextPlayer.transform);
@@ -162,7 +159,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Player {nextPlayer.playerID}?˜ ?„´ ?‹œ?‘!");
     }
 
-    /* [ì¶”ê??] PlayerControllerê°? ì¹´ë©”?¼ ëª¨ë“œ ë³?ê²½ì„ ?š”ì²??•  ?ˆ˜ ?ˆ?Š” ?•¨?ˆ˜
+    /* 
     public void RequestCameraModeChange(CameraController.CameraMode newMode)
     {
         if (mainCameraController != null)
@@ -189,7 +186,7 @@ public class GameManager : MonoBehaviour
     {
         SetGameState(GameState.GameOver);
         OnGameOver.Invoke();
-        Debug.Log("--- ê²Œì„ ?˜¤ë²?! ---");
+        Debug.Log("--- game over ---");
         StartCoroutine(RestartGameAfterDelay(3.0f));
     }
 
