@@ -42,6 +42,15 @@ public class PlayerController : MonoBehaviour
     private PlayerShooting playerShooting;
     public Trajectory trajectory;
 
+    [Header("아이템 데이터")]
+    public List<ItemType> ItemList = new List<ItemType>();
+    public int maxItemCount = 5;
+    public List<Image> player1ItemSlotImages;
+    public List<Image> player2ItemSlotImages;
+    private GameManager gameManager;
+    public Sprite healthIcon, rangeIcon, turnoffIcon;
+
+
     // [삭제] 카메라 컨트롤러에 대한 직접 참조를 제거합니다.
     // private CameraController mainCameraController;
 
@@ -70,6 +79,12 @@ public class PlayerController : MonoBehaviour
         // [삭제] CameraController를 찾는 로직을 모두 제거합니다.
         playerMovement.SetUIReferences(staminaImage);
         playerShooting.SetUIReferences(powerImage, powerText);
+
+        gameManager = FindObjectOfType<GameManager>();
+
+        if (gameManager == null)
+            Debug.LogError("GameManager를 찾을 수 없습니다!");
+        UpdateItemSelectionUI();
     }
 
     void Update()
@@ -98,6 +113,7 @@ public class PlayerController : MonoBehaviour
         {
             case PlayerState.Moving:
                 playerMovement.HandleMovement();
+                HandleItemHotkeys();
                 if (trajectory != null) trajectory.HideTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
                 {
@@ -303,6 +319,97 @@ public class PlayerController : MonoBehaviour
     {
         return playerShooting.GetCurrentLaunchPower();
     }
+    
+    // 아이템 함수
+
+    private void HandleItemHotkeys()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1)) UseItem(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) UseItem(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) UseItem(2);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) UseItem(3);
+        if (Input.GetKeyDown(KeyCode.Alpha5)) UseItem(4);
+    }
+
+    public void UseItem(int index)
+    {
+        if (index < 0 || index >= ItemList.Count)
+        {
+            Debug.Log("해당 슬롯에 아이템이 없습니다.");
+            return;
+        }
+        
+        Debug.Log($"아이템 사용: {ItemList[index]}");
+        ApplyEffect_GameObject(ItemList[index]); // 효과 적용
+        ItemList.RemoveAt(index);                     // 사용 후 제거
+        UpdateItemSelectionUI();                      // UI 갱신
+    }
+
+    public void ApplyEffect_GameObject(ItemType item)
+    {
+        PlayerMovement playerMovement = gameManager.players_movement[gameManager.currentPlayerIndex];
+        PlayerController Player = gameManager.players[gameManager.currentPlayerIndex];
+        PlayerController nextPlayer = gameManager.players[(gameManager.currentPlayerIndex + 1) % 2];
+
+        switch (item)
+        {
+            case ItemType.Health:
+                playerMovement.maxStamina *= 2;
+                // playerMovement.staminaDrainRate /= 2; 로 할까 고민중
+                break;
+
+            case ItemType.Range:
+                Player.ExplosionRange *= 2;
+                break;
+
+            case ItemType.TurnOff:
+                nextPlayer.trajectory.isPainted = false;
+                break;
+        }
+    }
+
+
+    public void UpdateItemSelectionUI()
+    {
+        var slotImages = GetCurrentItemSlotImages();
+
+        for (int i = 0; i < slotImages.Count; i++)
+        {
+            if (i < ItemList.Count)
+            {
+                slotImages[i].sprite = GetItemIcon(ItemList[i]); // 아이템 아이콘 설정
+                slotImages[i].color = Color.white;
+                slotImages[i].gameObject.SetActive(true);
+            }
+            else
+            {
+                slotImages[i].sprite = null;                     // 아이콘 비우기
+                slotImages[i].color = new Color(1, 1, 1, 0);      // 투명 처리
+                slotImages[i].gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private List<Image> GetCurrentItemSlotImages()
+    {
+        if (playerID == 0)
+            return player1ItemSlotImages;
+        else
+            return player2ItemSlotImages;
+    }
+
+
+    private Sprite GetItemIcon(ItemType type)
+    {
+        switch (type)
+        {
+            case ItemType.Health: return healthIcon;
+            case ItemType.Range: return rangeIcon;
+            case ItemType.TurnOff: return turnoffIcon;
+            default: return null;
+        }
+    }
+
 }
 
 [System.Serializable]

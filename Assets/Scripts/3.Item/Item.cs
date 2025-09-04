@@ -15,6 +15,7 @@ public enum ItemType
 public class Item : MonoBehaviour
 {
     public ItemType itemtype;
+    public Sprite itemIcon;
 
     // 중력 값을 설정합니다.
     public float gravityValue = -9.81f;
@@ -61,41 +62,67 @@ public class Item : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") || other.CompareTag("Bullet"))
+        if (other.CompareTag("Player"))
         {
-            // Player가 아니라 포탄이면, 포탄 발사자를 가져와서 효과 적용 가능
-            GameObject target = other.gameObject;
+            PlayerController player = other.GetComponent<PlayerController>();
 
-            // 포탄이면 발사자(Player)를 찾는 예시
-            // var bullet = other.GetComponent<Bullet>();
-            // if (bullet != null)
-            //     target = bullet.shooter; // shooter는 Bullet이 발사자를 참조하는 변수
+            if (player.ItemList.Count < player.maxItemCount)
+            {
+                // 아이템 추가
+                player.ItemList.Add(itemtype);
 
-            ApplyEffect(target);
-            Destroy(gameObject);
+                // UI 갱신 호출
+                player.UpdateItemSelectionUI();
+
+                Destroy(gameObject);
+            }
+            else
+            {
+               Debug.Log("아이템 슬롯이 가득 찼습니다!");
+            }
+        }
+        else if (other.CompareTag("Bullet"))
+        {
+            PlayerController player = gameManager.players[gameManager.currentPlayerIndex];
+
+            if (player.ItemList.Count < player.maxItemCount)
+            {
+                // 아이템 추가
+                player.ItemList.Add(itemtype);
+
+                // UI 갱신 호출
+                player.UpdateItemSelectionUI();
+
+                Destroy(gameObject);
+            }
+            else
+            {
+               Debug.Log("아이템 슬롯이 가득 찼습니다!");
+            }
         }
     }
 
-    public void ApplyEffect(GameObject player)
-    {
-        PlayerMovement playerMovement = player.GetComponent<PlayerMovement>();
-        PlayerController Player = gameManager.players[gameManager.currentPlayerIndex];
-        PlayerController nextPlayer = gameManager.players[(gameManager.currentPlayerIndex + 1) % 2];
+    // PlayerController.cs 에 코드 옮김
+    // public void ApplyEffect_GameObject(ItemType item)
+    // {
+    //     PlayerMovement playerMovement = gameManager.players_movement[gameManager.currentPlayerIndex];
+    //     PlayerController Player = gameManager.players[gameManager.currentPlayerIndex];
+    //     PlayerController nextPlayer = gameManager.players[(gameManager.currentPlayerIndex + 1) % 2];
 
-        switch (itemtype)
-        {
-            case ItemType.Health:
-                playerMovement.maxStamina *= 2;
-                // playerMovement.staminaDrainRate /= 2; 로 할까 고민중
-                break;
+    //     switch (item)
+    //     {
+    //         case ItemType.Health:
+    //             playerMovement.maxStamina *= 2;
+    //             // playerMovement.staminaDrainRate /= 2; 로 할까 고민중
+    //             break;
 
-            case ItemType.Range:
-                Player.ExplosionRange *= 2;
-                break;
+    //         case ItemType.Range:
+    //             Player.ExplosionRange *= 2;
+    //             break;
 
-            case ItemType.TurnOff:
-                nextPlayer.trajectory.isPainted = false;
-                break;
-        }
-    }
+    //         case ItemType.TurnOff:
+    //             nextPlayer.trajectory.isPainted = false;
+    //             break;
+    //     }
+    // }
 }
