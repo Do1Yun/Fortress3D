@@ -1,37 +1,40 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("?´?™ ?„¤? •")]
-    public float acceleration = 15.0f;
-    public float maxSpeed = 10.0f;
-    public float turnSpeed = 100.0f;
-    public float gravityValue = -9.81f;
-    public float deceleration = 10f;
+    [Header("ÀÌµ¿ ¼³Á¤")]
+    // ¡Ú¡Ú¡Ú Ãß°¡: °æ»ç¸¦ ´õ Àß ¿À¸£±â À§ÇØ °¡¼Óµµ¸¦ ³ô¿´½À´Ï´Ù. ¡Ú¡Ú¡Ú
+    public float acceleration = 1200f;
+    public float maxSpeed = 8.0f;
+    public float turnSpeed = 10f;
+    public float decelerationForce = 10f;
+    public float brakeForce = 20f;
 
-    [Header("ê²½ì‚¬ë©? ?„¤? •")]
-    public float slopeAdaptSpeed = 10f;
-    public float slopeRaycastLength = 1.5f;
-    public float slopeResistance = 0.5f;
-    public float resistanceAdaptSpeed = 5f;
+    [Header("ÁöÇü ÀûÀÀ")]
+    public float groundCheckDistance = 1.5f;
+    public LayerMask groundLayer;
+    public float slopeAdaptForce = 50f;
+    public float stickToGroundForce = 100f;
 
-    [Header("?Š¤?…Œë¯¸ë„ˆ ?„¤? •")]
+    [Header("½ºÅ×¹Ì³Ê ¼³Á¤")]
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
-    public float basicStamina = 100f;
     [HideInInspector] public float currentStamina;
+    public float basicStamina = 100f;
 
     private Image staminaImage;
-    private CharacterController characterController;
-    private Vector3 playerVelocity;
-    private float currentSpeed = 0f;
-    private float currentSpeedModifier = 1.0f;
+    private Rigidbody rb;
+    private Vector2 moveInput;
+    private bool isGrounded;
+    private Vector3 groundNormal;
+    private bool isMovementTurn;
 
     void Awake()
     {
-        characterController = GetComponent<CharacterController>();
+        rb = GetComponent<Rigidbody>();
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         currentStamina = maxStamina;
     }
 
@@ -47,92 +50,103 @@ public class PlayerMovement : MonoBehaviour
         UpdateStaminaUI();
     }
 
-    /// <summary>
-    /// ?´?™ ?„´?— ?˜¸ì¶?: ?‚¤ë³´ë“œ ?…? ¥, ì¤‘ë ¥, ê²½ì‚¬ë©? ? ?‘?„ ëª¨ë‘ ì²˜ë¦¬?•©?‹ˆ?‹¤.
-    /// </summary>
     public void HandleMovement()
     {
-        ApplyHorizontalMovement();
-        ApplyGravityAndSlope();
-    }
-
-    /// <summary>
-    /// ?´?™ ?„´?´ ?•„?‹ ?•Œ ?˜¸ì¶?: ì¤‘ë ¥ê³? ê²½ì‚¬ë©? ? ?‘ë§? ì²˜ë¦¬?•˜?—¬ ? œ?ë¦¬ë?? ì§??‚µ?‹ˆ?‹¤.
-    /// </summary>
-    public void UpdatePhysics()
-    {
-        // ?†?„ë¥? ?„œ?„œ?ˆ 0?œ¼ë¡? ì¤„ì…?‹ˆ?‹¤.
-        currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
-        ApplyGravityAndSlope();
-    }
-
-    private void ApplyGravityAndSlope()
-    {
-        // ì¤‘ë ¥ ? ?š©
-        if (characterController.isGrounded && playerVelocity.y < 0)
-        {
-            playerVelocity.y = -2f;
-        }
-        playerVelocity.y += gravityValue * Time.deltaTime;
-
-        // ê²½ì‚¬ë©? ? ?‘
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
-        {
-            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
-        }
-
-        // ìµœì¢… ?´?™ ? ?š©
-        Vector3 moveDirection = transform.forward * currentSpeed;
-        characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
-    }
-
-    private void ApplyHorizontalMovement()
-    {
+        isMovementTurn = true;
         float forwardInput = Input.GetAxis("Vertical");
         float turnInput = Input.GetAxis("Horizontal");
+        moveInput = new Vector2(turnInput, forwardInput);
 
-        transform.Rotate(0, turnInput * turnSpeed * Time.deltaTime, 0);
-
-        if (currentStamina > 0)
+        if (currentStamina > 0 && moveInput.magnitude > 0.1f)
         {
-            RaycastHit hit;
-            float slopeModifier = 1.0f;
-            if (Physics.Raycast(transform.position, transform.forward, out hit, 1.5f))
-            {
-                float slopeAngle = Vector3.Angle(Vector3.up, hit.normal);
-                if (slopeAngle > characterController.slopeLimit && Vector3.Dot(transform.forward, Vector3.up) < 0)
-                {
-                    slopeModifier = Mathf.Clamp(1.0f - (slopeAngle / 90f) * slopeResistance, 0.1f, 1.0f);
-                }
-            }
-            currentSpeedModifier = Mathf.Lerp(currentSpeedModifier, slopeModifier, resistanceAdaptSpeed * Time.deltaTime);
-
-            if (Mathf.Abs(forwardInput) > 0.1f)
-            {
-                currentSpeed += forwardInput * acceleration * currentSpeedModifier * Time.deltaTime;
-            }
-            else
-            {
-                currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
-            }
-
-            float currentMaxSpeed = maxSpeed * currentSpeedModifier;
-            float currentMinSpeed = -maxSpeed / 2 * currentSpeedModifier;
-            currentSpeed = Mathf.Clamp(currentSpeed, currentMinSpeed, currentMaxSpeed);
-
-            if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
-            {
-                currentStamina -= staminaDrainRate * Time.deltaTime;
-                UpdateStaminaUI();
-            }
+            currentStamina -= staminaDrainRate * Time.deltaTime;
         }
         else
         {
-            currentStamina = 0;
-            currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
+            currentStamina = Mathf.Max(0, currentStamina);
         }
+        UpdateStaminaUI();
+    }
+
+    public void UpdatePhysics()
+    {
+        isMovementTurn = false;
+        moveInput = Vector2.zero;
+    }
+
+    void FixedUpdate()
+    {
+        CheckGrounded();
+        if (isGrounded)
+        {
+            if (isMovementTurn)
+            {
+                ApplyLocomotion();
+                ApplyDeceleration();
+            }
+            else
+            {
+                ApplyBrakes();
+            }
+
+            AdaptToSlope();
+            rb.AddForce(-groundNormal * stickToGroundForce);
+        }
+    }
+
+    void ApplyLocomotion()
+    {
+        if (currentStamina <= 0) return;
+
+        if (Mathf.Abs(moveInput.y) > 0.1f)
+        {
+            if (rb.velocity.magnitude < maxSpeed)
+            {
+                // ¡Ú¡Ú¡Ú ÇÙ½É ¼öÁ¤: ÈûÀÇ ¹æÇâÀ» Áö¸é°ú ÆòÇàÇÏ°Ô ¸¸µé¾î °æ»ç¸¦ ¿À¸£´Â È¿À²À» ³ôÀÔ´Ï´Ù. ¡Ú¡Ú¡Ú
+                Vector3 moveDirection = Vector3.ProjectOnPlane(transform.forward, groundNormal).normalized;
+                Vector3 force = moveDirection * moveInput.y * acceleration;
+                rb.AddForce(force, ForceMode.Acceleration);
+            }
+        }
+
+        Vector3 targetAngularVelocity = transform.up * moveInput.x * turnSpeed;
+        rb.angularVelocity = Vector3.Lerp(rb.angularVelocity, targetAngularVelocity, Time.fixedDeltaTime * 15f);
+    }
+
+    void ApplyDeceleration()
+    {
+        if (isGrounded && moveInput.magnitude < 0.1f)
+        {
+            Vector3 oppositeForce = -rb.velocity * decelerationForce;
+            rb.AddForce(oppositeForce, ForceMode.Acceleration);
+        }
+    }
+
+    void ApplyBrakes()
+    {
+        rb.velocity = Vector3.Lerp(rb.velocity, Vector3.zero, Time.fixedDeltaTime * brakeForce);
+        rb.angularVelocity = Vector3.Lerp(rb.angularVelocity, Vector3.zero, Time.fixedDeltaTime * brakeForce);
+    }
+
+    void CheckGrounded()
+    {
+        Vector3 rayOrigin = transform.position + Vector3.up * 0.1f;
+        isGrounded = Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer);
+
+        if (isGrounded)
+        {
+            groundNormal = hit.normal;
+        }
+        else
+        {
+            groundNormal = Vector3.up;
+        }
+    }
+
+    void AdaptToSlope()
+    {
+        Vector3 torque = Vector3.Cross(transform.up, groundNormal) * slopeAdaptForce;
+        rb.AddTorque(torque, ForceMode.Acceleration);
     }
 
     public void UpdateStaminaUI()
@@ -143,3 +157,4 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 }
+
