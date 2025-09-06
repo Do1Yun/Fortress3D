@@ -356,9 +356,9 @@ public class PlayerController : MonoBehaviour
 
     public void ApplyEffect_GameObject(ItemType item)
     {
-        PlayerMovement playerMovement = gameManager.players_movement[gameManager.currentPlayerIndex];
-        PlayerController Player = gameManager.players[gameManager.currentPlayerIndex];
-        PlayerController nextPlayer = gameManager.players[(gameManager.currentPlayerIndex + 1) % 2];
+        PlayerMovement playerMovement = gameManager.players_movement[playerID];
+        PlayerController Player = gameManager.players[playerID];
+        PlayerController nextPlayer = gameManager.players[(playerID + 1) % 2];
 
         switch (item)
         {

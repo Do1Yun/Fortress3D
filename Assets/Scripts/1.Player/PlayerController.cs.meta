@@ -3,7 +3,18 @@ guid: 298d3c65fb23d90438a0e280bb35a168
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - staminaImage: {instanceID: 0}
+  - powerImage: {instanceID: 0}
+  - powerText: {instanceID: 0}
+  - statusText: {instanceID: 0}
+  - timerText: {instanceID: 0}
+  - timerImage: {instanceID: 0}
+  - rerollCountText: {instanceID: 0}
+  - trajectory: {instanceID: 0}
+  - healthIcon: {fileID: 21300000, guid: b6b3bf9288befc1448b60c2b82100d89, type: 3}
+  - rangeIcon: {fileID: 21300000, guid: 70517c007a3e1a34997b3169161d2dd9, type: 3}
+  - turnoffIcon: {fileID: 21300000, guid: ea3f39655d7752f46a432b1049b35079, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

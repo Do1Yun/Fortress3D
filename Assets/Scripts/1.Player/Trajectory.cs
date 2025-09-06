@@ -46,7 +46,10 @@ public class Trajectory : MonoBehaviour
 
     void DrawTrajectory()
     {
-        if(!isPainted) return;
+        if(!isPainted) {
+            HideTrajectory();
+            return;
+        }
         
         Vector3[] points = new Vector3[resolution];
         Vector3 startPosition = firePoint.position;
