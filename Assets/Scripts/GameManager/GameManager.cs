@@ -20,8 +20,6 @@ public class GameManager : MonoBehaviour
     [Header("플레이어 수 지정")]
     public int minPlayersForGame = 2;
 
-    [Header("UI 연결")]
-    public WindCompassUI windCompass;
     public enum GameState
     {
         PreGame,
@@ -111,11 +109,7 @@ public class GameManager : MonoBehaviour
         if (WindController.instance != null)
         {
             WindController.instance.ChangeWind();
-            // WindCompassUI가 연결되어 있다면, 로그 함수를 호출한다.
-            if (windCompass != null)
-            {
-                windCompass.LogRotationOnTurnChange();
-            }
+          
         }
         PlayerController previousPlayer = players[currentPlayerIndex];
         if (previousPlayer != null)
