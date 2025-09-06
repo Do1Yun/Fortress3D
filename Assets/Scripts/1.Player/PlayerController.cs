@@ -50,10 +50,6 @@ public class PlayerController : MonoBehaviour
     private GameManager gameManager;
     public Sprite healthIcon, rangeIcon, turnoffIcon;
 
-
-    // [삭제] 카메라 컨트롤러에 대한 직접 참조를 제거합니다.
-    // private CameraController mainCameraController;
-
     private float currentStageTimer;
 
     void Awake()
@@ -76,7 +72,6 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        // [삭제] CameraController를 찾는 로직을 모두 제거합니다.
         playerMovement.SetUIReferences(staminaImage);
         playerShooting.SetUIReferences(powerImage, powerText);
 
@@ -89,11 +84,13 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (currentState == PlayerState.Firing) return;
-        if (currentState == PlayerState.Waiting)
+        // ★★★ 핵심 수정 ★★★
+        // 발사 중('Firing')이거나 대기 중('Waiting')일 때는 물리 효과(중력)만 계속 적용하여
+        // 탱크가 땅에 붙어 있도록 합니다. 이렇게 하면 발사 후 꺼지는 현상이 사라집니다.
+        if (currentState == PlayerState.Firing || currentState == PlayerState.Waiting)
         {
             playerMovement.UpdatePhysics();
-            return;
+            return; // 키 입력 등 다른 로직은 실행하지 않습니다.
         }
 
         if (currentState != PlayerState.Moving)
@@ -157,29 +154,6 @@ public class PlayerController : MonoBehaviour
         {
             currentStageTimer = stageTimeLimit;
         }
-
-        /* GameManager에 카메라 모드 변경을 요청합니다.
-        if (GameManager.instance != null)
-        {
-            switch (newState)
-            {
-                case PlayerState.Moving:
-                case PlayerState.SelectingProjectile:
-                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.Default);
-                    break;
-                case PlayerState.AimingVertical:
-                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.SideView);
-                    break;
-                case PlayerState.AimingHorizontal:
-                case PlayerState.SettingPower:
-                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.TopDownView);
-                    break;
-                case PlayerState.Firing:
-                case PlayerState.Waiting:
-                    GameManager.instance.RequestCameraModeChange(CameraController.CameraMode.Default);
-                    break;
-            }
-        }*/
     }
 
     public void StartTurn()
@@ -319,7 +293,7 @@ public class PlayerController : MonoBehaviour
     {
         return playerShooting.GetCurrentLaunchPower();
     }
-    
+
     // 아이템 함수
 
     private void HandleItemHotkeys()
@@ -338,11 +312,11 @@ public class PlayerController : MonoBehaviour
             Debug.Log("해당 슬롯에 아이템이 없습니다.");
             return;
         }
-        
+
         Debug.Log($"아이템 사용: {ItemList[index]}");
         ApplyEffect_GameObject(ItemList[index]); // 효과 적용
-        ItemList.RemoveAt(index);                     // 사용 후 제거
-        UpdateItemSelectionUI();                      // UI 갱신
+        ItemList.RemoveAt(index);                      // 사용 후 제거
+        UpdateItemSelectionUI();                       // UI 갱신
     }
 
     public void ApplyEffect_GameObject(ItemType item)
@@ -368,7 +342,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
     public void UpdateItemSelectionUI()
     {
         var slotImages = GetCurrentItemSlotImages();
@@ -383,8 +356,8 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
-                slotImages[i].sprite = null;                     // 아이콘 비우기
-                slotImages[i].color = new Color(1, 1, 1, 0);      // 투명 처리
+                slotImages[i].sprite = null;                       // 아이콘 비우기
+                slotImages[i].color = new Color(1, 1, 1, 0);   // 투명 처리
                 slotImages[i].gameObject.SetActive(false);
             }
         }
@@ -398,7 +371,6 @@ public class PlayerController : MonoBehaviour
             return player2ItemSlotImages;
     }
 
-
     private Sprite GetItemIcon(ItemType type)
     {
         switch (type)
@@ -409,7 +381,6 @@ public class PlayerController : MonoBehaviour
             default: return null;
         }
     }
-
 }
 
 [System.Serializable]
@@ -419,3 +390,4 @@ public class ProjectileData
     public GameObject prefab;
     public Sprite icon;
 }
+

@@ -516,7 +516,7 @@ GameObject:
   - component: {fileID: 2255373667451475145}
   - component: {fileID: 5960109809089556292}
   - component: {fileID: 4045902387022053462}
-  - component: {fileID: 634653021398412990}
+  - component: {fileID: 5885699546359709931}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -588,6 +588,13 @@ MonoBehaviour:
   BasicExplosionRange: 5
   ExplosionRange: 5
   trajectory: {fileID: 5960109809089556292}
+  ItemList: 
+  maxItemCount: 5
+  player1ItemSlotImages: []
+  player2ItemSlotImages: []
+  healthIcon: {fileID: 0}
+  rangeIcon: {fileID: 0}
+  turnoffIcon: {fileID: 0}
 --- !u!114 &977182312925777150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -824,8 +831,8 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!65 &634653021398412990
-BoxCollider:
+--- !u!143 &5885699546359709931
+CharacterController:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -835,8 +842,13 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.91, y: 1.7, z: 2.32}
-  m_Center: {x: 0, y: 0.24, z: 0.05}
+  m_Height: 1.14
+  m_Radius: 0.98
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0.26, z: 0}
 --- !u!1 &3821891290624309224
 GameObject:
   m_ObjectHideFlags: 0

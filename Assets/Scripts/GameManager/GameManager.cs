@@ -218,7 +218,7 @@ public class GameManager : MonoBehaviour
     void Item_Reset() // 턴이 넘어가면 아이템 영향 초기화
     {
         players[currentPlayerIndex].trajectory.isPainted = true;
-        players_movement[currentPlayerIndex].maxStamina = players_movement[currentPlayerIndex].basicStamina;
+        players_movement[currentPlayerIndex].maxStamina = players_movement[currentPlayerIndex].currentStamina;
         players[currentPlayerIndex].ExplosionRange = players[currentPlayerIndex].BasicExplosionRange;
     }
 }
