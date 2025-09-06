@@ -15,7 +15,7 @@ public class GameManager : MonoBehaviour
     public int currentPlayerIndex = 0;
 
     [Header("메인카메라 지정")]
-    public CameraController mainCameraController; 
+    public CameraController mainCameraController;
 
     [Header("플레이어 수 지정")]
     public int minPlayersForGame = 2;
@@ -93,7 +93,7 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);
-        Debug.Log($"Player {firstPlayer.playerID}?쓽 ?꽩 ?떆?옉!");
+        Debug.Log($"Player {firstPlayer.playerID}의 턴 시작!");
     }
 
     public void SetGameState(GameState newState)
@@ -109,7 +109,7 @@ public class GameManager : MonoBehaviour
         if (WindController.instance != null)
         {
             WindController.instance.ChangeWind();
-          
+
         }
         PlayerController previousPlayer = players[currentPlayerIndex];
         if (previousPlayer != null)
@@ -150,18 +150,8 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
-        Debug.Log($"Player {nextPlayer.playerID}?쓽 ?꽩 ?떆?옉!");
+        Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!");
     }
-
-    /* 
-    public void RequestCameraModeChange(CameraController.CameraMode newMode)
-    {
-        if (mainCameraController != null)
-        {
-            mainCameraController.SwitchMode(newMode);
-        }
-    }
-    */
 
     private bool CheckGameOverCondition()
     {
@@ -212,7 +202,8 @@ public class GameManager : MonoBehaviour
     void Item_Reset() // 턴이 넘어가면 아이템 영향 초기화
     {
         players[currentPlayerIndex].trajectory.isPainted = true;
-        players_movement[currentPlayerIndex].maxStamina = players_movement[currentPlayerIndex].currentStamina;
+        // ★[수정] 스테미너를 잘못 초기화하던 문제의 코드 라인을 삭제했습니다.
+        // players_movement[currentPlayerIndex].maxStamina = players_movement[currentPlayerIndex].currentStamina;
         players[currentPlayerIndex].ExplosionRange = players[currentPlayerIndex].BasicExplosionRange;
     }
 }

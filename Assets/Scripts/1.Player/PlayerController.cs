@@ -15,20 +15,20 @@ public class PlayerController : MonoBehaviour
     public int playerID;
     public int rerollChances = 3;
 
-    [Header("UI 연결")]
+    [Header("UI 연결 (이 플레이어 전용)")]
     public Image staminaImage;
     public Image powerImage;
     public TextMeshProUGUI powerText;
     public TextMeshProUGUI statusText;
     public TextMeshProUGUI timerText;
     public Image timerImage;
-
-    [Header("상태별 시간 제한")]
-    public float stageTimeLimit = 5.0f;
-
-    [Header("포탄 선택 UI")]
     public List<Image> projectileSlotImages;
     public TextMeshProUGUI rerollCountText;
+    public List<Image> itemSlotImages;
+
+    // ★★★ [수정] 누락되었던 변수를 다시 추가합니다. ★★★
+    [Header("상태별 시간 제한")]
+    public float stageTimeLimit = 5.0f;
 
     [Header("포탄 데이터")]
     public List<ProjectileData> projectileDatabase;
@@ -45,8 +45,6 @@ public class PlayerController : MonoBehaviour
     [Header("아이템 데이터")]
     public List<ItemType> ItemList = new List<ItemType>();
     public int maxItemCount = 5;
-    public List<Image> player1ItemSlotImages;
-    public List<Image> player2ItemSlotImages;
     private GameManager gameManager;
     public Sprite healthIcon, rangeIcon, turnoffIcon;
 
@@ -84,13 +82,10 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // ★★★ 핵심 수정 ★★★
-        // 발사 중('Firing')이거나 대기 중('Waiting')일 때는 물리 효과(중력)만 계속 적용하여
-        // 탱크가 땅에 붙어 있도록 합니다. 이렇게 하면 발사 후 꺼지는 현상이 사라집니다.
         if (currentState == PlayerState.Firing || currentState == PlayerState.Waiting)
         {
             playerMovement.UpdatePhysics();
-            return; // 키 입력 등 다른 로직은 실행하지 않습니다.
+            return;
         }
 
         if (currentState != PlayerState.Moving)
@@ -159,12 +154,31 @@ public class PlayerController : MonoBehaviour
     public void StartTurn()
     {
         playerMovement.ResetStamina();
+        selectedProjectile = null;
+
+        if (playerShooting != null)
+        {
+            playerShooting.SetProjectile(null);
+        }
+
         SetPlayerState(PlayerState.Moving);
-        Debug.Log($"Player {playerID}의 턴 시작! [이동 모드]");
+        Debug.Log($"======== PLAYER {playerID} TURN START ========");
     }
 
     public void EndTurn()
     {
+        if (projectileSlotImages != null)
+        {
+            foreach (var img in projectileSlotImages)
+            {
+                if (img != null) img.gameObject.SetActive(false);
+            }
+        }
+        if (rerollCountText != null)
+        {
+            rerollCountText.gameObject.SetActive(false);
+        }
+
         SetPlayerState(PlayerState.Waiting);
         Debug.Log($"Player {playerID}의 턴 종료!");
     }
@@ -178,8 +192,9 @@ public class PlayerController : MonoBehaviour
                 SetPlayerState(PlayerState.SelectingProjectile);
                 break;
             case PlayerState.SelectingProjectile:
-                if (isTimedOut)
+                if (selectedProjectile == null)
                 {
+                    Debug.Log("포탄을 선택하지 않아 첫 번째 포탄으로 자동 선택됩니다.");
                     SelectProjectile(0, false);
                 }
                 SetPlayerState(PlayerState.AimingVertical);
@@ -207,6 +222,8 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R) && rerollChances > 0)
         {
             rerollChances--;
+            selectedProjectile = null;
+            playerShooting.SetProjectile(null);
             GenerateProjectileSelection();
         }
     }
@@ -219,11 +236,19 @@ public class PlayerController : MonoBehaviour
             Debug.LogError("Projectile Database가 비어있습니다!");
             return;
         }
+
+        // ★★★ [수정] 겹치지 않게 섞는 방식 대신, 3번의 완전한 무작위 선택으로 변경합니다. (중복 허용) ★★★
         for (int i = 0; i < 3; i++)
         {
             int randomIndex = Random.Range(0, projectileDatabase.Count);
             currentSelection.Add(projectileDatabase[randomIndex]);
         }
+
+        if (currentSelection.Count >= 3)
+        {
+            Debug.Log($"Player {playerID} Projectile Selection Generated: [1] {currentSelection[0].type}, [2] {currentSelection[1].type}, [3] {currentSelection[2].type}");
+        }
+
         UpdateProjectileSelectionUI();
     }
 
@@ -232,7 +257,9 @@ public class PlayerController : MonoBehaviour
         if (index < 0 || index >= currentSelection.Count) return;
 
         selectedProjectile = currentSelection[index];
-        Debug.Log($"Player {playerID}가 '{selectedProjectile.type}' 포탄을 선택했습니다.");
+
+        string prefabName = (selectedProjectile.prefab != null) ? selectedProjectile.prefab.name : "NULL";
+        Debug.Log($"[ACTION] Player {playerID} selected index {index} -> Projectile: {selectedProjectile.type}, Setting Prefab: {prefabName}");
 
         playerShooting.SetProjectile(selectedProjectile.prefab);
 
@@ -244,6 +271,8 @@ public class PlayerController : MonoBehaviour
 
     void UpdateProjectileSelectionUI()
     {
+        if (projectileSlotImages == null) return;
+
         for (int i = 0; i < projectileSlotImages.Count; i++)
         {
             if (i < currentSelection.Count)
@@ -269,11 +298,17 @@ public class PlayerController : MonoBehaviour
         if (timerImage != null && timerImage.transform.parent != null) timerImage.transform.parent.gameObject.SetActive(isAimingOrPower || isSelecting);
         if (powerImage != null && powerImage.transform.parent != null) powerImage.transform.parent.gameObject.SetActive(state == PlayerState.SettingPower);
 
-        foreach (var img in projectileSlotImages)
+        if (projectileSlotImages != null)
         {
-            if (img != null) img.gameObject.SetActive(isSelecting);
+            foreach (var img in projectileSlotImages)
+            {
+                if (img != null) img.gameObject.SetActive(isSelecting);
+            }
         }
-        if (rerollCountText != null) rerollCountText.gameObject.SetActive(isSelecting);
+        if (rerollCountText != null)
+        {
+            rerollCountText.gameObject.SetActive(isSelecting);
+        }
 
         if (statusText != null)
         {
@@ -314,9 +349,9 @@ public class PlayerController : MonoBehaviour
         }
 
         Debug.Log($"아이템 사용: {ItemList[index]}");
-        ApplyEffect_GameObject(ItemList[index]); // 효과 적용
-        ItemList.RemoveAt(index);                      // 사용 후 제거
-        UpdateItemSelectionUI();                       // UI 갱신
+        ApplyEffect_GameObject(ItemList[index]);
+        ItemList.RemoveAt(index);
+        UpdateItemSelectionUI();
     }
 
     public void ApplyEffect_GameObject(ItemType item)
@@ -329,7 +364,6 @@ public class PlayerController : MonoBehaviour
         {
             case ItemType.Health:
                 playerMovement.maxStamina *= 2;
-                // playerMovement.staminaDrainRate /= 2; 로 할까 고민중
                 break;
 
             case ItemType.Range:
@@ -344,31 +378,23 @@ public class PlayerController : MonoBehaviour
 
     public void UpdateItemSelectionUI()
     {
-        var slotImages = GetCurrentItemSlotImages();
+        if (itemSlotImages == null) return;
 
-        for (int i = 0; i < slotImages.Count; i++)
+        for (int i = 0; i < itemSlotImages.Count; i++)
         {
             if (i < ItemList.Count)
             {
-                slotImages[i].sprite = GetItemIcon(ItemList[i]); // 아이템 아이콘 설정
-                slotImages[i].color = Color.white;
-                slotImages[i].gameObject.SetActive(true);
+                itemSlotImages[i].sprite = GetItemIcon(ItemList[i]);
+                itemSlotImages[i].color = Color.white;
+                itemSlotImages[i].gameObject.SetActive(true);
             }
             else
             {
-                slotImages[i].sprite = null;                       // 아이콘 비우기
-                slotImages[i].color = new Color(1, 1, 1, 0);   // 투명 처리
-                slotImages[i].gameObject.SetActive(false);
+                itemSlotImages[i].sprite = null;
+                itemSlotImages[i].color = new Color(1, 1, 1, 0);
+                itemSlotImages[i].gameObject.SetActive(false);
             }
         }
-    }
-
-    private List<Image> GetCurrentItemSlotImages()
-    {
-        if (playerID == 0)
-            return player1ItemSlotImages;
-        else
-            return player2ItemSlotImages;
     }
 
     private Sprite GetItemIcon(ItemType type)

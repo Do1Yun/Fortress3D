@@ -34,8 +34,6 @@ public class CameraController : MonoBehaviour
         public float pitch;
         public Vector3 lookAtOffset;
     }
-
-    // ★★★ 핵심 수정: CharacterController의 움직임을 부드럽게 따라가기 위해 FixedUpdate를 다시 LateUpdate로 변경합니다. ★★★
     void LateUpdate()
     {
         if (target == null) return;

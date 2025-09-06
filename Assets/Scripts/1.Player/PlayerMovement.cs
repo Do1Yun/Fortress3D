@@ -22,6 +22,9 @@ public class PlayerMovement : MonoBehaviour
     public float staminaDrainRate = 20f;
     [HideInInspector] public float currentStamina;
 
+    // ★[수정 1] 아이템 효과 등으로 maxStamina가 변경되기 전의 기본값을 저장할 변수입니다.
+    private float baseMaxStamina;
+
     private Image staminaImage;
     private CharacterController characterController;
     private Vector3 playerVelocity;
@@ -31,6 +34,8 @@ public class PlayerMovement : MonoBehaviour
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
+        // ★[수정 2] 게임 시작 시, 초기 maxStamina 값을 baseMaxStamina에 저장해 둡니다.
+        baseMaxStamina = maxStamina;
         currentStamina = maxStamina;
     }
 
@@ -42,6 +47,9 @@ public class PlayerMovement : MonoBehaviour
 
     public void ResetStamina()
     {
+        // ★[수정 3] 아이템 효과를 초기화하기 위해 maxStamina를 기본값으로 먼저 되돌립니다.
+        maxStamina = baseMaxStamina;
+        // 그 다음, 현재 스테미너를 최대로 채웁니다.
         currentStamina = maxStamina;
         UpdateStaminaUI();
     }
@@ -60,21 +68,18 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     public void UpdatePhysics()
     {
-        // 속도를 서서히 0으로 줄입니다.
         currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
         ApplyGravityAndSlope();
     }
 
     private void ApplyGravityAndSlope()
     {
-        // 중력 적용
         if (characterController.isGrounded && playerVelocity.y < 0)
         {
             playerVelocity.y = -2f;
         }
         playerVelocity.y += gravityValue * Time.deltaTime;
 
-        // 경사면 적응
         RaycastHit hit;
         if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
         {
@@ -82,7 +87,6 @@ public class PlayerMovement : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
         }
 
-        // 최종 이동 적용
         Vector3 moveDirection = transform.forward * currentSpeed;
         characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
     }
@@ -142,4 +146,3 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 }
-
