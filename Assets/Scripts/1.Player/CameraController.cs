@@ -35,8 +35,8 @@ public class CameraController : MonoBehaviour
         public Vector3 lookAtOffset;
     }
 
-    // ★★★ 핵심 수정: Rigidbody의 물리 움직임을 부드럽게 따라가기 위해 LateUpdate를 FixedUpdate로 변경합니다. ★★★
-    void FixedUpdate()
+    // ★★★ 핵심 수정: CharacterController의 움직임을 부드럽게 따라가기 위해 FixedUpdate를 다시 LateUpdate로 변경합니다. ★★★
+    void LateUpdate()
     {
         if (target == null) return;
 
@@ -45,28 +45,29 @@ public class CameraController : MonoBehaviour
         // --- 입력 처리 ---
         if (Input.GetMouseButton(1)) // 위치 회전 (우클릭)
         {
-            currentX += Input.GetAxis("Mouse X") * freeLook_x_Speed * Time.fixedDeltaTime;
-            currentY -= Input.GetAxis("Mouse Y") * freeLook_y_Speed * Time.fixedDeltaTime;
+            // [수정] LateUpdate는 Time.deltaTime을 사용해야 합니다.
+            currentX += Input.GetAxis("Mouse X") * freeLook_x_Speed * Time.deltaTime;
+            currentY -= Input.GetAxis("Mouse Y") * freeLook_y_Speed * Time.deltaTime;
             currentY = ClampAngle(currentY, yMinLimit, yMaxLimit);
         }
         else // 기본 위치로 복귀
         {
             float desiredYaw = target.eulerAngles.y + currentSettings.yaw;
-            currentX = Mathf.LerpAngle(currentX, desiredYaw, rotationDamping * Time.fixedDeltaTime);
-            currentY = Mathf.LerpAngle(currentY, currentSettings.pitch, rotationDamping * Time.fixedDeltaTime);
+            currentX = Mathf.LerpAngle(currentX, desiredYaw, rotationDamping * Time.deltaTime);
+            currentY = Mathf.LerpAngle(currentY, currentSettings.pitch, rotationDamping * Time.deltaTime);
         }
 
         if (Input.GetMouseButton(2)) // 앵글 조정 (휠 클릭)
         {
-            float panX = -Input.GetAxis("Mouse X") * pivotPanSpeed * Time.fixedDeltaTime;
-            float panY = -Input.GetAxis("Mouse Y") * pivotPanSpeed * Time.fixedDeltaTime;
+            float panX = -Input.GetAxis("Mouse X") * pivotPanSpeed * Time.deltaTime;
+            float panY = -Input.GetAxis("Mouse Y") * pivotPanSpeed * Time.deltaTime;
             lookAtPivot += transform.right * panX + transform.up * panY;
             Vector3 relativePivot = lookAtPivot - currentSettings.lookAtOffset;
             lookAtPivot = currentSettings.lookAtOffset + Vector3.ClampMagnitude(relativePivot, maxPivotOffset);
         }
         else // 앵글 중심으로 복귀
         {
-            lookAtPivot = Vector3.Lerp(lookAtPivot, currentSettings.lookAtOffset, pivotReturnDamping * Time.fixedDeltaTime);
+            lookAtPivot = Vector3.Lerp(lookAtPivot, currentSettings.lookAtOffset, pivotReturnDamping * Time.deltaTime);
         }
 
         // --- 최종 위치 및 회전 계산 ---
@@ -76,8 +77,8 @@ public class CameraController : MonoBehaviour
         Quaternion desiredRotation = Quaternion.LookRotation(lookAtPoint - transform.position);
 
         // --- 변환 적용 ---
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, transitionDamping * Time.fixedDeltaTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationDamping * Time.fixedDeltaTime);
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, transitionDamping * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationDamping * Time.deltaTime);
     }
 
     public void SetTarget(Transform newTarget)
