@@ -10,19 +10,20 @@ public class PlayerMovement : MonoBehaviour
     public float turnSpeed = 100.0f;
     public float gravityValue = -9.81f;
     public float deceleration = 10f;
+    public float wallClimbSpeed = 5.0f;
 
     [Header("경사면 설정")]
     public float slopeAdaptSpeed = 10f;
     public float slopeRaycastLength = 1.5f;
-    public float slopeResistance = 0.5f;
-    public float resistanceAdaptSpeed = 5f;
+    public float forwardRaycastLength = 1.5f;
+    // ★[수정 15] 오르막길 속도 감소 변수를 삭제합니다.
+    // [Range(0, 1)] public float uphillSpeedReduction = 0.5f;
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
     [HideInInspector] public float currentStamina;
 
-    // ★[수정 1] 아이템 효과 등으로 maxStamina가 변경되기 전의 기본값을 저장할 변수입니다.
     private float baseMaxStamina;
 
     private Image staminaImage;
@@ -31,10 +32,12 @@ public class PlayerMovement : MonoBehaviour
     private float currentSpeed = 0f;
     private float currentSpeedModifier = 1.0f;
 
+    private bool isWallClimbing = false;
+    private Vector3 wallNormal;
+
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
-        // ★[수정 2] 게임 시작 시, 초기 maxStamina 값을 baseMaxStamina에 저장해 둡니다.
         baseMaxStamina = maxStamina;
         currentStamina = maxStamina;
     }
@@ -47,20 +50,25 @@ public class PlayerMovement : MonoBehaviour
 
     public void ResetStamina()
     {
-        // ★[수정 3] 아이템 효과를 초기화하기 위해 maxStamina를 기본값으로 먼저 되돌립니다.
         maxStamina = baseMaxStamina;
-        // 그 다음, 현재 스테미너를 최대로 채웁니다.
         currentStamina = maxStamina;
         UpdateStaminaUI();
     }
 
     /// <summary>
-    /// 이동 턴에 호출: 키보드 입력, 중력, 경사면 적응을 모두 처리합니다.
+    /// 이동 턴에 호출: 키보드 입력, 중력, 경사면/벽 적응을 모두 처리합니다.
     /// </summary>
     public void HandleMovement()
     {
-        ApplyHorizontalMovement();
-        ApplyGravityAndSlope();
+        if (isWallClimbing)
+        {
+            HandleWallClimbing();
+        }
+        else
+        {
+            ApplyHorizontalMovement();
+            ApplyGravityAndSlope();
+        }
     }
 
     /// <summary>
@@ -74,21 +82,80 @@ public class PlayerMovement : MonoBehaviour
 
     private void ApplyGravityAndSlope()
     {
+        RaycastHit hit;
+        Vector3 moveDirection = Vector3.zero;
+        bool groundFound = false;
+
+        if (Physics.Raycast(transform.position, transform.forward, out hit, forwardRaycastLength))
+        {
+            if (hit.normal.y < 0.1f && Input.GetAxis("Vertical") > 0.1f && !isWallClimbing && characterController.isGrounded)
+            {
+                isWallClimbing = true;
+                wallNormal = hit.normal;
+                transform.rotation = Quaternion.LookRotation(-wallNormal);
+                return;
+            }
+
+            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
+
+            moveDirection = Vector3.ProjectOnPlane(transform.forward, hit.normal).normalized * currentSpeed;
+            groundFound = true;
+        }
+
+        if (!groundFound && Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
+        {
+            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
+
+            moveDirection = Vector3.ProjectOnPlane(transform.forward, hit.normal).normalized * currentSpeed;
+            groundFound = true;
+        }
+
+        if (!groundFound)
+        {
+            moveDirection = transform.forward * currentSpeed;
+        }
+
         if (characterController.isGrounded && playerVelocity.y < 0)
         {
             playerVelocity.y = -2f;
         }
         playerVelocity.y += gravityValue * Time.deltaTime;
 
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
+        characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
+    }
+
+    private void HandleWallClimbing()
+    {
+        if (Input.GetAxis("Vertical") < -0.1f || characterController.isGrounded)
         {
-            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
+            isWallClimbing = false;
+            return;
         }
 
-        Vector3 moveDirection = transform.forward * currentSpeed;
-        characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
+        float forwardInput = Input.GetAxis("Vertical");
+        float turnInput = Input.GetAxis("Horizontal");
+
+        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(-wallNormal), slopeAdaptSpeed * Time.deltaTime);
+
+        Vector3 wallMove = transform.up * forwardInput * wallClimbSpeed * Time.deltaTime;
+        wallMove += wallNormal * 0.1f;
+
+        characterController.Move(wallMove);
+
+        if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
+            if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
+            {
+                currentStamina -= staminaDrainRate * Time.deltaTime;
+                UpdateStaminaUI();
+            }
+
+        if (currentStamina <= 0)
+        {
+            currentStamina = 0;
+            isWallClimbing = false;
+        }
     }
 
     private void ApplyHorizontalMovement()
@@ -98,32 +165,20 @@ public class PlayerMovement : MonoBehaviour
 
         transform.Rotate(0, turnInput * turnSpeed * Time.deltaTime, 0);
 
+        // ★[수정 16] 오르막길 최대 속도 제한 로직을 제거합니다.
+
         if (currentStamina > 0)
         {
-            RaycastHit hit;
-            float slopeModifier = 1.0f;
-            if (Physics.Raycast(transform.position, transform.forward, out hit, 1.5f))
-            {
-                float slopeAngle = Vector3.Angle(Vector3.up, hit.normal);
-                if (slopeAngle > characterController.slopeLimit && Vector3.Dot(transform.forward, Vector3.up) < 0)
-                {
-                    slopeModifier = Mathf.Clamp(1.0f - (slopeAngle / 90f) * slopeResistance, 0.1f, 1.0f);
-                }
-            }
-            currentSpeedModifier = Mathf.Lerp(currentSpeedModifier, slopeModifier, resistanceAdaptSpeed * Time.deltaTime);
-
             if (Mathf.Abs(forwardInput) > 0.1f)
             {
-                currentSpeed += forwardInput * acceleration * currentSpeedModifier * Time.deltaTime;
+                currentSpeed += forwardInput * acceleration * Time.deltaTime;
             }
             else
             {
                 currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
             }
 
-            float currentMaxSpeed = maxSpeed * currentSpeedModifier;
-            float currentMinSpeed = -maxSpeed / 2 * currentSpeedModifier;
-            currentSpeed = Mathf.Clamp(currentSpeed, currentMinSpeed, currentMaxSpeed);
+            currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed / 2, maxSpeed);
 
             if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
             {
