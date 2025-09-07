@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,13 +9,18 @@ public class Chunk : MonoBehaviour
     public int chunkSize = 16;
     public float isoLevel = 0.5f;
     public Vector3Int chunkPosition;
+    public int bedrockHeight = 1;
+    public int buildHeightLimit = 15;
+
+    // 점진적 변경 속도를 조절하는 변수
+    [Header("점진적 변경 설정")]
+    public float modificationSpeed = 10.0f;
 
     private float[,,] voxelPoints;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private Mesh mesh;
-    public int bedrockHeight = 1; // 이 높이(Y) 이하로는 파괴할 수 없음
-    public int buildHeightLimit = 15; // 이 높이(Y) 이상으로는 생성할 수 없음 (chunkSize보다 작아야 함)
+
     void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
@@ -41,13 +47,8 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = 0; z <= chunkSize; z++)
                 {
-                    // 월드 좌표 기준의 높이
                     float worldY = chunkPosition.y * chunkSize + y;
-
-                    // 높이를 기준으로 밀도를 계산 (groundHeight 아래는 모두 1에 가까운 값)
                     float density = groundHeight - worldY;
-
-                    // 값을 0과 1 사이로 제한하여 완벽한 평면과 그 아래를 채웁니다.
                     voxelPoints[x, y, z] = Mathf.Clamp01(density);
                 }
             }
@@ -81,6 +82,7 @@ public class Chunk : MonoBehaviour
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.normals = normals.ToArray();
+        mesh.RecalculateBounds();
         meshCollider.sharedMesh = mesh;
     }
 
@@ -142,7 +144,6 @@ public class Chunk : MonoBehaviour
 
         Vector3 normal = new Vector3(-dx, -dy, -dz);
 
-        // [추가] 법선 벡터의 길이가 0에 가까우면 (오류 발생 가능성이 있으면) 기본 값(위쪽)을 반환합니다.
         if (normal.sqrMagnitude < 0.0001f)
         {
             return Vector3.up;
@@ -176,51 +177,62 @@ public class Chunk : MonoBehaviour
         normal = Vector3.Lerp(n0, n1, t).normalized;
     }
 
-    public void ModifyTerrain(Vector3 worldPos, float modificationAmount, float radius)
+    // 이 메서드는 이제 코루틴을 시작합니다.
+    public void ModifyTerrain(Vector3 worldPos, float totalModificationAmount, float radius)
+    {
+        StartCoroutine(ModifyTerrainGradually(worldPos, totalModificationAmount, radius));
+    }
+
+    // 지형을 점진적으로 변경하는 코루틴
+    private IEnumerator ModifyTerrainGradually(Vector3 worldPos, float totalModificationAmount, float radius)
     {
         Vector3 localPos = worldPos - transform.position;
-        bool needsUpdate = false;
+        float elapsed = 0f;
 
-        for (int x = 0; x <= chunkSize; x++)
+        while (elapsed < 1f)
         {
-            for (int y = 0; y <= chunkSize; y++)
+            elapsed += Time.deltaTime * modificationSpeed;
+            float currentModificationAmount = totalModificationAmount * Time.deltaTime * modificationSpeed;
+
+            bool needsUpdate = false;
+            for (int x = 0; x <= chunkSize; x++)
             {
-                for (int z = 0; z <= chunkSize; z++)
+                for (int y = 0; y <= chunkSize; y++)
                 {
-                    Vector3 pointPos = new Vector3(x, y, z);
-                    float distance = Vector3.Distance(pointPos, localPos);
-
-                    if (distance < radius)
+                    for (int z = 0; z <= chunkSize; z++)
                     {
-                        // --- [추가] 경계 보호 로직 ---
-                        // 1. 기반암(Bedrock) 보호: 기반암 높이 이하이고, 지형을 파괴하려 할 때(modificationAmount < 0)
-                        if (y <= bedrockHeight && modificationAmount < 0)
-                        {
-                            continue; // 이번 수정을 건너뜀
-                        }
+                        Vector3 pointPos = new Vector3(x, y, z);
+                        float distance = Vector3.Distance(pointPos, localPos);
 
-                        // 2. 건설 높이 제한 보호: 높이 제한 이상이고, 지형을 생성하려 할 때(modificationAmount > 0)
-                        if (y >= buildHeightLimit && modificationAmount > 0)
+                        if (distance < radius)
                         {
-                            continue; // 이번 수정을 건너뜀
-                        }
-                        // --- 로직 끝 ---
+                            if (y <= bedrockHeight && totalModificationAmount < 0)
+                            {
+                                continue;
+                            }
+                            if (y >= buildHeightLimit && totalModificationAmount > 0)
+                            {
+                                continue;
+                            }
 
-                        float oldValue = voxelPoints[x, y, z];
-                        float modification = modificationAmount * (1f - distance / radius);
-                        voxelPoints[x, y, z] = Mathf.Clamp01(voxelPoints[x, y, z] + modification);
+                            float oldValue = voxelPoints[x, y, z];
+                            float modification = currentModificationAmount * (1f - distance / radius);
+                            voxelPoints[x, y, z] = Mathf.Clamp01(voxelPoints[x, y, z] + modification);
 
-                        if (oldValue != voxelPoints[x, y, z])
-                        {
-                            needsUpdate = true;
+                            if (oldValue != voxelPoints[x, y, z])
+                            {
+                                needsUpdate = true;
+                            }
                         }
                     }
                 }
             }
-        }
-        if (needsUpdate)
-        {
-            CreateMeshData();
+
+            if (needsUpdate)
+            {
+                CreateMeshData();
+            }
+            yield return null;
         }
     }
 }
