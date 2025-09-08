@@ -19,6 +19,8 @@ public class GameManager : MonoBehaviour
 
     [Header("플레이어 수 지정")]
     public int minPlayersForGame = 2;
+    public int score_player1 = 0, score_player2 = 0;
+    public int playerInCaptureZone = 0;
 
     public enum GameState
     {
@@ -116,6 +118,16 @@ public class GameManager : MonoBehaviour
         {
             previousPlayer.EndTurn();
             OnTurnEnd.Invoke(previousPlayer.playerID);
+        }
+
+        // 점령시 점수 획득
+        if (players[0].isInCaptureZone && !players[1].isInCaptureZone)
+        {
+            score_player1 += 1;
+        }
+        else if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
+        {
+            score_player2 += 1;
         }
 
         Item_Reset(); // 아이템 영향 초기화

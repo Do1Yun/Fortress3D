@@ -48,6 +48,9 @@ public class PlayerController : MonoBehaviour
     private GameManager gameManager;
     public Sprite healthIcon, rangeIcon, turnoffIcon;
 
+    [Header("점령 데이터")]
+    public bool isInCaptureZone = false;
+
     private float currentStageTimer;
 
     void Awake()
