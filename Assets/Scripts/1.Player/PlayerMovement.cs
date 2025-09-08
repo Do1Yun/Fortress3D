@@ -16,8 +16,7 @@ public class PlayerMovement : MonoBehaviour
     public float slopeAdaptSpeed = 10f;
     public float slopeRaycastLength = 1.5f;
     public float forwardRaycastLength = 1.5f;
-    // ★[수정 15] 오르막길 속도 감소 변수를 삭제합니다.
-    // [Range(0, 1)] public float uphillSpeedReduction = 0.5f;
+    public LayerMask groundLayer; // 지면을 감지하기 위한 레이어 마스크 변수
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
@@ -30,7 +29,6 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController characterController;
     private Vector3 playerVelocity;
     private float currentSpeed = 0f;
-    private float currentSpeedModifier = 1.0f;
 
     private bool isWallClimbing = false;
     private Vector3 wallNormal;
@@ -55,9 +53,6 @@ public class PlayerMovement : MonoBehaviour
         UpdateStaminaUI();
     }
 
-    /// <summary>
-    /// 이동 턴에 호출: 키보드 입력, 중력, 경사면/벽 적응을 모두 처리합니다.
-    /// </summary>
     public void HandleMovement()
     {
         if (isWallClimbing)
@@ -71,9 +66,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 이동 턴이 아닐 때 호출: 중력과 경사면 적응만 처리하여 제자리를 지킵니다.
-    /// </summary>
     public void UpdatePhysics()
     {
         currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
@@ -86,8 +78,11 @@ public class PlayerMovement : MonoBehaviour
         Vector3 moveDirection = Vector3.zero;
         bool groundFound = false;
 
-        if (Physics.Raycast(transform.position, transform.forward, out hit, forwardRaycastLength))
+        if (Physics.Raycast(transform.position, transform.forward, out hit, forwardRaycastLength, groundLayer))
         {
+            // ★[수정] 앞으로 쏘는 레이캐스트에서만 감지된 레이어 이름을 콘솔에 출력합니다.
+            Debug.Log("Forward Raycast Detected Layer: " + LayerMask.LayerToName(hit.collider.gameObject.layer));
+
             if (hit.normal.y < 0.1f && Input.GetAxis("Vertical") > 0.1f && !isWallClimbing && characterController.isGrounded)
             {
                 isWallClimbing = true;
@@ -103,8 +98,9 @@ public class PlayerMovement : MonoBehaviour
             groundFound = true;
         }
 
-        if (!groundFound && Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength))
+        if (!groundFound && Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength, groundLayer))
         {
+            // 아래 방향 레이캐스트의 디버그 로그는 제거되었습니다.
             Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
 
@@ -145,11 +141,10 @@ public class PlayerMovement : MonoBehaviour
         characterController.Move(wallMove);
 
         if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
-            if (Mathf.Abs(forwardInput) > 0.1f || Mathf.Abs(turnInput) > 0.1f)
-            {
-                currentStamina -= staminaDrainRate * Time.deltaTime;
-                UpdateStaminaUI();
-            }
+        {
+            currentStamina -= staminaDrainRate * Time.deltaTime;
+            UpdateStaminaUI();
+        }
 
         if (currentStamina <= 0)
         {
@@ -164,8 +159,6 @@ public class PlayerMovement : MonoBehaviour
         float turnInput = Input.GetAxis("Horizontal");
 
         transform.Rotate(0, turnInput * turnSpeed * Time.deltaTime, 0);
-
-        // ★[수정 16] 오르막길 최대 속도 제한 로직을 제거합니다.
 
         if (currentStamina > 0)
         {
