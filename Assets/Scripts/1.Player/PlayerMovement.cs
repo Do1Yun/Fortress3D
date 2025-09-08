@@ -16,7 +16,7 @@ public class PlayerMovement : MonoBehaviour
     public float slopeAdaptSpeed = 10f;
     public float slopeRaycastLength = 1.5f;
     public float forwardRaycastLength = 1.5f;
-    public LayerMask groundLayer; // 지면을 감지하기 위한 레이어 마스크 변수
+    public LayerMask groundLayer; // 지면과 벽을 감지할 단일 레이어 마스크
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
@@ -78,10 +78,10 @@ public class PlayerMovement : MonoBehaviour
         Vector3 moveDirection = Vector3.zero;
         bool groundFound = false;
 
+        // 앞으로 쏘는 레이캐스트가 다시 groundLayer를 사용하도록 변경합니다.
         if (Physics.Raycast(transform.position, transform.forward, out hit, forwardRaycastLength, groundLayer))
         {
-            // ★[수정] 앞으로 쏘는 레이캐스트에서만 감지된 레이어 이름을 콘솔에 출력합니다.
-            Debug.Log("Forward Raycast Detected Layer: " + LayerMask.LayerToName(hit.collider.gameObject.layer));
+            Debug.Log("Forward Raycast Detected Object: " + hit.collider.name);
 
             if (hit.normal.y < 0.1f && Input.GetAxis("Vertical") > 0.1f && !isWallClimbing && characterController.isGrounded)
             {
@@ -90,17 +90,11 @@ public class PlayerMovement : MonoBehaviour
                 transform.rotation = Quaternion.LookRotation(-wallNormal);
                 return;
             }
-
-            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
-
-            moveDirection = Vector3.ProjectOnPlane(transform.forward, hit.normal).normalized * currentSpeed;
-            groundFound = true;
         }
 
-        if (!groundFound && Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength, groundLayer))
+        // 아래로 쏘는 레이캐스트는 기존처럼 groundLayer를 사용합니다.
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength, groundLayer))
         {
-            // 아래 방향 레이캐스트의 디버그 로그는 제거되었습니다.
             Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation * transform.rotation, slopeAdaptSpeed * Time.deltaTime);
 
