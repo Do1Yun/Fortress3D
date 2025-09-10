@@ -586,6 +586,9 @@ MonoBehaviour:
   - type: 2
     prefab: {fileID: 7999235287928038026, guid: 063db9f4dc85b6c49be6627620ae571c, type: 3}
     icon: {fileID: 21300000, guid: 79f36fda72bf3ac4892228b3dc9416f0, type: 3}
+  - type: 3
+    prefab: {fileID: 7999235287928038026, guid: 021368492f46fab42b5c655b2f13afe8, type: 3}
+    icon: {fileID: 0}
   BasicExplosionRange: 5
   ExplosionRange: 5
   trajectory: {fileID: 5960109809089556292}
@@ -594,6 +597,7 @@ MonoBehaviour:
   healthIcon: {fileID: 0}
   rangeIcon: {fileID: 0}
   turnoffIcon: {fileID: 0}
+  isInCaptureZone: 0
 --- !u!114 &977182312925777150
 MonoBehaviour:
   m_ObjectHideFlags: 0
