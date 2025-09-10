@@ -33,6 +33,18 @@ public class PlayerMovement : MonoBehaviour
     private bool isWallClimbing = false;
     private Vector3 wallNormal;
 
+    // --- 넉백 관련 변수들 ---
+    private Vector3 knockbackVelocity = Vector3.zero;
+    private float knockbackDamping = 5.0f; // 넉백이 줄어드는 속도
+
+    // 플레이어가 외부 힘을 받을 수 있도록 하는 함수
+    public void ApplyKnockback(Vector3 direction, float force)
+    {
+        // y축으로는 밀려나지 않도록 방향을 수평으로 고정합니다.
+        direction.y = 0;
+        knockbackVelocity = direction.normalized * force;
+    }
+
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
@@ -113,7 +125,13 @@ public class PlayerMovement : MonoBehaviour
         }
         playerVelocity.y += gravityValue * Time.deltaTime;
 
-        characterController.Move((moveDirection + playerVelocity) * Time.deltaTime);
+        // ▼▼▼ [수정된 부분] ▼▼▼
+        // 1. 매 프레임 넉백 속도를 점차 줄여 부드럽게 멈추게 합니다.
+        knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, knockbackDamping * Time.deltaTime);
+
+        // 2. 최종 이동 벡터에 넉백 속도를 더해줍니다.
+        characterController.Move((moveDirection + playerVelocity + knockbackVelocity) * Time.deltaTime);
+        // ▲▲▲ [여기까지 수정] ▲▲▲
     }
 
     private void HandleWallClimbing()

@@ -1,10 +1,13 @@
+// Projectile.cs
 using UnityEngine;
 
 public enum ProjectileType
 {
     NormalImpact,
     TerrainDestruction,
-    TerrainCreation
+    TerrainCreation,
+    TerrainPush,         
+    TerrainPull          
 }
 
 public class Projectile : MonoBehaviour
@@ -19,6 +22,7 @@ public class Projectile : MonoBehaviour
     [Header("타입별 설정")]
     public float terrainModificationStrength = 2.0f;
     public float explosionForce = 500f;
+    public float playerKnockbackForce = 20f; // <-- 플레이어 넉백 전용 변수 추가! (기본값 20)
 
     private bool hasExploded = false;
     private Rigidbody rb;
@@ -46,31 +50,24 @@ public class Projectile : MonoBehaviour
         if (gameManager == null)
             Debug.LogError("GameManager를 찾을 수 없습니다!");
 
-        PlayerController player = gameManager.players[gameManager.currentPlayerIndex];
-        explosionRadius = player.ExplosionRange;
-
-        Destroy(gameObject, lifeTime);
+        // 포탄이 생성되고 lifeTime초 후에 자동으로 Explode 함수를 호출합니다.
+        Invoke("Explode", lifeTime);
     }
 
+    // isTrigger가 아닌 Collider와 충돌했을 때 호출됩니다.
     void OnCollisionEnter(Collision collision)
     {
+        // 이미 폭발했다면 아무것도 하지 않습니다.
         if (hasExploded) return;
-        Vector3 explosionPosition = collision.contacts[0].point;
-        Explode(explosionPosition);
-    }
 
-    void OnDestroy()
-    {
-        // 포탄이 폭발하지 않고 수명이 다해 사라진 경우에도 턴이 넘어가도록 처리
-        if (!hasExploded && GameManager.instance != null && GameManager.instance.currentState == GameManager.GameState.ProjectileFlying)
-        {
-            GameManager.instance.OnProjectileDestroyed();
-        }
+        // 즉시 폭발하고, 이벤트를 전파한 후, 오브젝트를 파괴합니다.
+        Explode(collision.contacts[0].point);
     }
-
     void Explode(Vector3 explosionPosition)
     {
+        if (hasExploded) return;
         hasExploded = true;
+
         Debug.LogFormat("'{0}' 포탄 폭발! 위치: {1}", type, explosionPosition);
 
         if (explosionEffectPrefab != null)
@@ -78,10 +75,12 @@ public class Projectile : MonoBehaviour
             Instantiate(explosionEffectPrefab, explosionPosition, Quaternion.identity);
         }
 
+        Collider[] colliders = Physics.OverlapSphere(explosionPosition, explosionRadius);
+
         switch (type)
         {
             case ProjectileType.NormalImpact:
-                Collider[] colliders = Physics.OverlapSphere(explosionPosition, explosionRadius);
+                // (기존과 동일)
                 foreach (Collider hit in colliders)
                 {
                     Rigidbody rb = hit.GetComponentInParent<Rigidbody>();
@@ -93,6 +92,7 @@ public class Projectile : MonoBehaviour
                 break;
 
             case ProjectileType.TerrainDestruction:
+                // (기존과 동일)
                 if (World.Instance != null)
                 {
                     World.Instance.ModifyTerrain(explosionPosition, -terrainModificationStrength, explosionRadius);
@@ -100,11 +100,44 @@ public class Projectile : MonoBehaviour
                 break;
 
             case ProjectileType.TerrainCreation:
+                // (기존과 동일)
                 if (World.Instance != null)
                 {
                     World.Instance.ModifyTerrain(explosionPosition, terrainModificationStrength, explosionRadius);
                 }
                 break;
+
+            // ▼▼▼ [수정된 부분] ▼▼▼
+            case ProjectileType.TerrainPush:
+                // 1. 지형 파괴 로직 제거!
+                // 2. 주변 플레이어 밀어내기
+                foreach (Collider hit in colliders)
+                {
+                    PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
+                    if (player != null)
+                    {
+                        Vector3 direction = player.transform.position - explosionPosition;
+                        // 새로 만든 playerKnockbackForce 변수 사용
+                        player.ApplyKnockback(direction, playerKnockbackForce);
+                    }
+                }
+                break;
+
+            case ProjectileType.TerrainPull:
+                // 1. 지형 생성 로직 제거!
+                // 2. 주변 플레이어 끌어당기기
+                foreach (Collider hit in colliders)
+                {
+                    PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
+                    if (player != null)
+                    {
+                        Vector3 direction = explosionPosition - player.transform.position;
+                        // 새로 만든 playerKnockbackForce 변수 사용
+                        player.ApplyKnockback(direction, playerKnockbackForce);
+                    }
+                }
+                break;
+                // ▲▲▲ [여기까지 수정] ▲▲▲
         }
 
         if (GameManager.instance != null)
