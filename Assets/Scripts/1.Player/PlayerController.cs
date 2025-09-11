@@ -26,7 +26,6 @@ public class PlayerController : MonoBehaviour
     public TextMeshProUGUI rerollCountText;
     public List<Image> itemSlotImages;
 
-    // ★★★ [수정] 누락되었던 변수를 다시 추가합니다. ★★★
     [Header("상태별 시간 제한")]
     public float stageTimeLimit = 5.0f;
 
@@ -122,13 +121,13 @@ public class PlayerController : MonoBehaviour
             case PlayerState.AimingVertical:
                 playerMovement.UpdatePhysics();
                 playerAiming.HandleVerticalAim();
-                if (trajectory != null) trajectory.ShowTrajectory();
+                if (trajectory != null) trajectory.ShowFixedTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.AimingHorizontal:
                 playerMovement.UpdatePhysics();
                 playerAiming.HandleHorizontalAim();
-                if (trajectory != null) trajectory.ShowTrajectory();
+                if (trajectory != null) trajectory.ShowFixedTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.SettingPower:
@@ -182,6 +181,7 @@ public class PlayerController : MonoBehaviour
             rerollCountText.gameObject.SetActive(false);
         }
 
+        if (trajectory != null) trajectory.HideTrajectory();
         SetPlayerState(PlayerState.Waiting);
         Debug.Log($"Player {playerID}의 턴 종료!");
     }
