@@ -83,15 +83,15 @@ public class GameManager : MonoBehaviour
 
     IEnumerator StartGameAfterDelay(float delay)
     {
-        yield return new WaitForSeconds(delay);
-
         PlayerController firstPlayer = players[currentPlayerIndex];
-        firstPlayer.StartTurn();
-
         if (mainCameraController != null)
         {
             mainCameraController.SetTarget(firstPlayer.transform);
         }
+
+        yield return new WaitForSeconds(delay);
+
+        firstPlayer.StartTurn();
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);

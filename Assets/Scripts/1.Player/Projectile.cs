@@ -6,8 +6,8 @@ public enum ProjectileType
     NormalImpact,
     TerrainDestruction,
     TerrainCreation,
-    TerrainPush,         
-    TerrainPull          
+    TerrainPush,
+    TerrainPull
 }
 
 public class Projectile : MonoBehaviour
@@ -63,7 +63,14 @@ public class Projectile : MonoBehaviour
         // 즉시 폭발하고, 이벤트를 전파한 후, 오브젝트를 파괴합니다.
         Explode(collision.contacts[0].point);
     }
-    void Explode(Vector3 explosionPosition)
+
+    // [수정] Invoke 호출을 위해 매개변수가 없는 Explode 함수를 추가했습니다.
+    private void Explode()
+    {
+        Explode(this.transform.position); // 현재 위치를 폭발 지점으로 사용
+    }
+
+    private void Explode(Vector3 explosionPosition)
     {
         if (hasExploded) return;
         hasExploded = true;
