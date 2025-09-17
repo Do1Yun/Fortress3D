@@ -12,7 +12,16 @@ public class ItemSpawner : MonoBehaviour
     public int z_min_index = 0;
     public int z_max_index = 0;
 
+    public GameManager gameManager;
     private float timer;
+
+    void Start()
+    {
+        gameManager = FindObjectOfType<GameManager>();
+
+        if (gameManager == null)
+            Debug.LogError("GameManager를 찾을 수 없습니다!");
+    }
 
     void Update()
     {
@@ -26,7 +35,7 @@ public class ItemSpawner : MonoBehaviour
 
     void SpawnItem()
     {
-        if (chunk == null || itemPrefab == null) return;
+        if (chunk == null || itemPrefab == null || gameManager.isMGTime()) return;  // 우당탕탕 일때 아이템 안떨구도록 수정
 
         int x = Random.Range(x_min_index, x_max_index);
         int y = 50;

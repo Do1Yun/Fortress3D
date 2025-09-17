@@ -96,4 +96,10 @@ public class CameraController : MonoBehaviour
         if (angle > 360) angle -= 360;
         return Mathf.Clamp(angle, min, max);
     }
+
+    public void SetCamera(Transform newTarget)  // 우당탕탕 만들때 만든 함수
+    {
+        transform.position = newTarget.position;
+        transform.rotation = newTarget.rotation;
+    }
 }

@@ -1,14 +1,14 @@
 // Scripts.zip/1.Player/PlayerController.cs
 
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
-    public enum PlayerState { SelectingProjectile, Moving, AimingVertical, AimingHorizontal, SettingPower, Waiting, Firing }
+    public enum PlayerState { SelectingProjectile, Moving, AimingVertical, AimingHorizontal, SettingPower, Waiting, Firing, MakingGround }
     private PlayerState currentState;
 
     [Header("플레이어 기본 설정")]
@@ -50,7 +50,12 @@ public class PlayerController : MonoBehaviour
     [Header("점령 데이터")]
     public bool isInCaptureZone = false;
 
-    private float currentStageTimer;
+    [Header("우당탕탕 데이터")]
+    public float MakingGroundTime = 10.0f;
+    public bool isMakingGround = false;
+    public Camera mainCamera;
+
+    private float currentStageTimer = 5.0f;
 
     void Awake()
     {
@@ -79,6 +84,11 @@ public class PlayerController : MonoBehaviour
 
         if (gameManager == null)
             Debug.LogError("GameManager를 찾을 수 없습니다!");
+
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
         UpdateItemSelectionUI();
     }
 
@@ -90,12 +100,24 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (currentState != PlayerState.Moving)
+        if (currentState == PlayerState.MakingGround)
+        {
+            currentStageTimer -= Time.deltaTime; // MakingGround 상태에 대한 시간 감소
+            if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
+            if (timerImage != null) timerImage.fillAmount = currentStageTimer / MakingGroundTime; // MakingGroundTime으로 변경
+            if (currentStageTimer <= 0)
+            {
+                Debug.Log($"우당탕탕 종료");
+                isMakingGround = false;
+                SetPlayerState(PlayerState.Waiting);
+                return;
+            }
+        }
+        else if (currentState != PlayerState.Moving)
         {
             currentStageTimer -= Time.deltaTime;
             if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
             if (timerImage != null) timerImage.fillAmount = currentStageTimer / stageTimeLimit;
-
             if (currentStageTimer <= 0)
             {
                 TransitionToNextStage(true);
@@ -104,40 +126,44 @@ public class PlayerController : MonoBehaviour
         }
 
         switch (currentState)
-        {
-            case PlayerState.Moving:
-                playerMovement.HandleMovement();
-                HandleItemHotkeys();
-                if (trajectory != null) trajectory.HideTrajectory();
-                if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
-                {
-                    TransitionToNextStage(false);
-                }
-                break;
-            case PlayerState.SelectingProjectile:
-                playerMovement.UpdatePhysics();
-                HandleProjectileSelection();
-                break;
-            case PlayerState.AimingVertical:
-                playerMovement.UpdatePhysics();
-                playerAiming.HandleVerticalAim();
-                if (trajectory != null) trajectory.ShowFixedTrajectory();
-                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
-                break;
-            case PlayerState.AimingHorizontal:
-                playerMovement.UpdatePhysics();
-                playerAiming.HandleHorizontalAim();
-                if (trajectory != null) trajectory.ShowFixedTrajectory();
-                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
-                break;
-            case PlayerState.SettingPower:
-                playerMovement.UpdatePhysics();
-                playerShooting.HandlePowerSetting();
-                if (trajectory != null) trajectory.ShowTrajectory();
-                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
-                break;
-        }
+            {
+                case PlayerState.Moving:
+                    playerMovement.HandleMovement();
+                    HandleItemHotkeys();
+                    if (trajectory != null) trajectory.HideTrajectory();
+                    if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
+                    {
+                        TransitionToNextStage(false);
+                    }
+                    break;
+                case PlayerState.SelectingProjectile:
+                    playerMovement.UpdatePhysics();
+                    HandleProjectileSelection();
+                    break;
+                case PlayerState.AimingVertical:
+                    playerMovement.UpdatePhysics();
+                    playerAiming.HandleVerticalAim();
+                    if (trajectory != null) trajectory.ShowFixedTrajectory();
+                    if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
+                    break;
+                case PlayerState.AimingHorizontal:
+                    playerMovement.UpdatePhysics();
+                    playerAiming.HandleHorizontalAim();
+                    if (trajectory != null) trajectory.ShowFixedTrajectory();
+                    if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
+                    break;
+                case PlayerState.SettingPower:
+                    playerMovement.UpdatePhysics();
+                    playerShooting.HandlePowerSetting();
+                    if (trajectory != null) trajectory.ShowTrajectory();
+                    if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
+                    break;
+                case PlayerState.MakingGround:
+                    HandleModifyKeys();
+                    break;
+            }
     }
+
 
     void SetPlayerState(PlayerState newState)
     {
@@ -408,6 +434,47 @@ public class PlayerController : MonoBehaviour
             case ItemType.Range: return rangeIcon;
             case ItemType.TurnOff: return turnoffIcon;
             default: return null;
+        }
+    }
+
+    private void HandleModifyKeys()  // 우당탕탕 만들때 만든 함수
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                Vector3 groundPoint = hit.point;
+                Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 100, groundPoint.z);
+                Instantiate(projectileDatabase[2].prefab, SpawnPosition, Quaternion.identity);
+                Debug.Log("지형 생성 포탄 생성");
+            }
+        }
+        if (Input.GetMouseButtonDown(1))
+        {
+            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                Vector3 groundPoint = hit.point;
+                Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 100, groundPoint.z);
+                Instantiate(projectileDatabase[1].prefab, SpawnPosition, Quaternion.identity);
+                Debug.Log("지형 파괴 포탄 생성");
+            }
+        }
+    }
+
+    public void MakeGround()  // 우당탕탕 만들때 만든 함수
+    {
+        if(!isMakingGround)
+        {
+            Debug.Log($"Player {playerID + 1} 우당탕탕 시작");
+            isMakingGround = true;
+            currentState = PlayerState.MakingGround;
+            currentStageTimer = MakingGroundTime;
         }
     }
 }

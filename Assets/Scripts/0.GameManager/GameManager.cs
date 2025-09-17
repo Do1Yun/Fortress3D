@@ -16,6 +16,7 @@ public class GameManager : MonoBehaviour
 
     [Header("메인카메라 지정")]
     public CameraController mainCameraController;
+    public GameObject MGCamera;
 
     [Header("플레이어 수 지정")]
     public int minPlayersForGame = 2;
@@ -28,6 +29,7 @@ public class GameManager : MonoBehaviour
         PlayerTurn,
         ProjectileFlying,
         TurnEnd,
+        MakeGround,
         GameOver
     }
     public GameState currentState;
@@ -83,6 +85,21 @@ public class GameManager : MonoBehaviour
 
     IEnumerator StartGameAfterDelay(float delay)
     {
+        // 우당탕탕 관련
+        SetGameState(GameState.MakeGround);
+        if (mainCameraController != null)
+        {
+            mainCameraController.SetCamera(MGCamera.transform);
+        }
+        players[currentPlayerIndex].MakeGround();
+        yield return new WaitWhile(() => players[currentPlayerIndex].isMakingGround);
+
+        yield return new WaitForSeconds(delay);
+
+        players[currentPlayerIndex + 1].MakeGround();
+        yield return new WaitWhile(() => players[currentPlayerIndex + 1].isMakingGround);
+        // 관련 끝
+
         PlayerController firstPlayer = players[currentPlayerIndex];
         if (mainCameraController != null)
         {
@@ -217,5 +234,11 @@ public class GameManager : MonoBehaviour
         // ★[수정] 스테미너를 잘못 초기화하던 문제의 코드 라인을 삭제했습니다.
         // players_movement[currentPlayerIndex].maxStamina = players_movement[currentPlayerIndex].currentStamina;
         players[currentPlayerIndex].ExplosionRange = players[currentPlayerIndex].BasicExplosionRange;
+    }
+
+    public bool isMGTime()
+    {
+        if (currentState == GameState.MakeGround) return true;
+        else return false;
     }
 }

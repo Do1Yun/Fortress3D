@@ -18,6 +18,8 @@ public class WindController : MonoBehaviour
     public Vector3 CurrentWindDirection { get; private set; }
     public float CurrentWindStrength { get; private set; }
 
+    public GameManager gameManager;
+
     private void Awake()
     {
         if (instance == null)
@@ -32,11 +34,18 @@ public class WindController : MonoBehaviour
 
     void Start()
     {
+        gameManager = FindObjectOfType<GameManager>();
+
+        if (gameManager == null)
+            Debug.LogError("GameManager를 찾을 수 없습니다!");
+
         ChangeWind();
     }
 
     public void ChangeWind()
     {
+        if (gameManager.isMGTime()) return; // 우당탕탕일때는 생성 X
+
         // 1. 일단 완전 3D 랜덤 방향을 생성합니다.
         Vector3 randomDirection = Random.onUnitSphere;
 
