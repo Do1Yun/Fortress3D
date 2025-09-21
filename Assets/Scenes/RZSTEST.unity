@@ -1037,7 +1037,7 @@ GameObject:
   - component: {fileID: 797502924}
   m_Layer: 0
   m_Name: Camera
-  m_TagString: Untagged
+  m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2139,6 +2139,7 @@ MonoBehaviour:
   minWindStrength: 1
   maxWindStrength: 15
   verticalWindFactor: 1
+  gameManager: {fileID: 0}
 --- !u!4 &1775467467
 Transform:
   m_ObjectHideFlags: 0
@@ -2510,6 +2511,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &2073963266
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2073963267}
+  m_Layer: 0
+  m_Name: MGCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2073963267
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2073963266}
+  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
+  m_LocalPosition: {x: 120, y: 220, z: 120}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 15
+  m_LocalEulerAnglesHint: {x: 90, y: 90, z: 180}
 --- !u!1001 &2143272608
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2778,6 +2810,10 @@ PrefabInstance:
       propertyPath: player2ProjectileSlotImages.Array.data[2]
       value: 
       objectReference: {fileID: 562357450}
+    - target: {fileID: 977182312925777150, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
+      propertyPath: maxStamina
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3818938376461592831, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: m_Name
       value: Player1
@@ -2861,6 +2897,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GameManager
       objectReference: {fileID: 0}
+    - target: {fileID: 3321014670452753895, guid: 435340f766e5c4546b1dd74bdef7e428, type: 3}
+      propertyPath: MGCamera
+      value: 
+      objectReference: {fileID: 2073963266}
     - target: {fileID: 3321014670452753895, guid: 435340f766e5c4546b1dd74bdef7e428, type: 3}
       propertyPath: mainCameraController
       value: 
