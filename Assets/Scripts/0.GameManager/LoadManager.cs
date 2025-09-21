@@ -14,6 +14,14 @@ public class LoadManager : MonoBehaviour
         SceneManager.LoadScene("MainScene");
     }
 
+    public void StartScene()
+    {
+        SceneManager.LoadScene("StartScene");
+    }
+    public void SettingScene()
+    {
+        SceneManager.LoadScene("SettingScene");
+    }
     public void Exit()
     {
         Application.Quit();
