@@ -39,12 +39,13 @@ public class Item : MonoBehaviour
         characterController = GetComponent<CharacterController>();
 
         itemtype = (ItemType)Random.Range(0, System.Enum.GetValues(typeof(ItemType)).Length);
-        switch (itemtype)
-        {
-            case ItemType.Health: meshRenderer.material.color = Color.red; break;
-            case ItemType.Range: meshRenderer.material.color = Color.green; break;
-            case ItemType.TurnOff: meshRenderer.material.color = Color.blue; break;
-        }
+        //switch (itemtype)
+        //{
+        //    case ItemType.Health: meshRenderer.material.color = Color.red; break;
+        //    case ItemType.Range: meshRenderer.material.color = Color.green; break;
+        //    case ItemType.TurnOff: meshRenderer.material.color = Color.blue; break;
+        //}
+        // 같은 상자 모양으로 만들기 위해 색깔 코드 주석처리
     }
 
     void Update()

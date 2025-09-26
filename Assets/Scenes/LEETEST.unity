@@ -2253,6 +2253,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ItemSpawner
       objectReference: {fileID: 0}
+    - target: {fileID: 4626514958183691165, guid: f1516c8aa46779e468733b7851f12468, type: 3}
+      propertyPath: itemPrefab
+      value: 
+      objectReference: {fileID: 7836720144767834864, guid: 186d3395ab52a8d468db386f9e6c4664, type: 3}
     - target: {fileID: 4626514958183691166, guid: f1516c8aa46779e468733b7851f12468, type: 3}
       propertyPath: m_RootOrder
       value: 9
