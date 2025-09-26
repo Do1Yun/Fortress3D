@@ -10,6 +10,7 @@ public class World : MonoBehaviour
     public Vector2Int worldSizeInChunks = new Vector2Int(4, 4);
 
     private Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
+        private List<CaptureZone> captureZones;
 
     void Awake()
     {
@@ -21,6 +22,8 @@ public class World : MonoBehaviour
         {
             Instance = this;
         }
+         captureZones = new List<CaptureZone>(FindObjectsOfType<CaptureZone>());
+
     }
 
     void Start()
@@ -56,7 +59,18 @@ public class World : MonoBehaviour
     }
 
     public void ModifyTerrain(Vector3 worldPos, float modificationAmount, float radius)
-    {
+    { foreach (CaptureZone zone in captureZones)
+        {
+            // 폭발 지점과 거점 중심 사이의 거리를 계산합니다.
+            float distanceToZone = Vector3.Distance(worldPos, zone.transform.position);
+
+            // 만약 거리가 거점의 반경보다 작거나 같다면 (즉, 거점 안이라면)
+            if (distanceToZone <= zone.captureRadius)
+            {
+                Debug.Log("거점 보호 지역 안에서는 지형을 변경할 수 없습니다.");
+                return; // 함수를 즉시 종료하여 지형 변경을 막습니다.
+            }
+        }
         int chunkSize = chunkPrefab.GetComponent<Chunk>().chunkSize;
         int modificationRadiusInChunks = Mathf.CeilToInt(radius / chunkSize);
 

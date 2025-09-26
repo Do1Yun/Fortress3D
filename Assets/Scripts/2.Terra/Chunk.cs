@@ -235,4 +235,19 @@ public class Chunk : MonoBehaviour
             yield return null;
         }
     }
+    void OnDrawGizmos()
+{
+    // 기즈모의 색상을 설정합니다. (예: 반투명한 노란색)
+    Gizmos.color = new Color(1, 1, 0, 0.5f);
+    
+    // 기즈모가 청크의 로컬 좌표를 기준으로 그려지도록 설정합니다.
+    Gizmos.matrix = transform.localToWorldMatrix;
+    
+    // 청크 크기에 맞는 와이어 큐브를 그립니다.
+    // 큐브의 중심점을 (chunkSize / 2) 위치로 설정해야 정확한 위치에 그려집니다.
+    Vector3 cubeCenter = new Vector3(chunkSize / 2f, chunkSize / 2f, chunkSize / 2f);
+    Vector3 cubeSize = new Vector3(chunkSize, chunkSize, chunkSize);
+    
+    Gizmos.DrawWireCube(cubeCenter, cubeSize);
+}
 }
