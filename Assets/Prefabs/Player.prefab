@@ -579,25 +579,28 @@ MonoBehaviour:
   projectileDatabase:
   - type: 0
     prefab: {fileID: 7999235287928038026, guid: aecb4d882814f71479315d824d7913c7, type: 3}
-    icon: {fileID: 21300000, guid: d6d6b61cfbde0d24084449afb8b31dc6, type: 3}
+    icon: {fileID: 21300000, guid: 02ba442db2a9f9f48a54f022a491215e, type: 3}
   - type: 1
     prefab: {fileID: 7999235287928038026, guid: fc4cfa43644bea8448942e7fcf8477bf, type: 3}
-    icon: {fileID: 21300000, guid: 58e631f0970367f41b132f4c55411a1a, type: 3}
+    icon: {fileID: 21300000, guid: 016dbbc59aa19144bba93834060e4154, type: 3}
   - type: 2
     prefab: {fileID: 7999235287928038026, guid: 063db9f4dc85b6c49be6627620ae571c, type: 3}
-    icon: {fileID: 21300000, guid: 79f36fda72bf3ac4892228b3dc9416f0, type: 3}
+    icon: {fileID: 21300000, guid: dca3568dbbe56d441983cd747de6db3b, type: 3}
   - type: 3
     prefab: {fileID: 7999235287928038026, guid: 021368492f46fab42b5c655b2f13afe8, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 94efa8e4760bb7e49ba2ac26d3e206e9, type: 3}
   BasicExplosionRange: 5
   ExplosionRange: 5
   trajectory: {fileID: 5960109809089556292}
   ItemList: 
-  maxItemCount: 5
-  healthIcon: {fileID: 0}
-  rangeIcon: {fileID: 0}
-  turnoffIcon: {fileID: 0}
+  maxItemCount: 3
+  healthIcon: {fileID: 21300000, guid: 58deb80820034564ca7506a4d520f595, type: 3}
+  rangeIcon: {fileID: 21300000, guid: 9149cb64421bf584abe651480212fe41, type: 3}
+  turnoffIcon: {fileID: 21300000, guid: 9779f91ec939ceb4cb9f623a898381d7, type: 3}
   isInCaptureZone: 0
+  MakingGroundTime: 10
+  isMakingGround: 0
+  mainCamera: {fileID: 0}
 --- !u!114 &977182312925777150
 MonoBehaviour:
   m_ObjectHideFlags: 0

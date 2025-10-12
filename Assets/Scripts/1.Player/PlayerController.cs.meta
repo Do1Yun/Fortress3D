@@ -12,9 +12,10 @@ MonoImporter:
   - timerImage: {instanceID: 0}
   - rerollCountText: {instanceID: 0}
   - trajectory: {instanceID: 0}
-  - healthIcon: {fileID: 21300000, guid: b6b3bf9288befc1448b60c2b82100d89, type: 3}
-  - rangeIcon: {fileID: 21300000, guid: 70517c007a3e1a34997b3169161d2dd9, type: 3}
-  - turnoffIcon: {fileID: 21300000, guid: ea3f39655d7752f46a432b1049b35079, type: 3}
+  - healthIcon: {fileID: 21300000, guid: 58deb80820034564ca7506a4d520f595, type: 3}
+  - rangeIcon: {fileID: 21300000, guid: 9149cb64421bf584abe651480212fe41, type: 3}
+  - turnoffIcon: {fileID: 21300000, guid: 9779f91ec939ceb4cb9f623a898381d7, type: 3}
+  - mainCamera: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

@@ -1,15 +1,22 @@
-// Scripts.zip/1.Player/PlayerController.cs
-
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// UITweener와 함께 사용할 상태별 UI 설정 클래스입니다.
+[System.Serializable]
+public class UIStateSettings
+{
+    public PlayerController.PlayerState state;
+    // 이 상태일 때 활성화할 UITweener 컴포넌트들의 리스트입니다.
+    public List<UITweener> activeTweeners;
+}
+
 public class PlayerController : MonoBehaviour
 {
     public enum PlayerState { SelectingProjectile, Moving, AimingVertical, AimingHorizontal, SettingPower, Waiting, Firing, MakingGround }
-    private PlayerState currentState;
+    public PlayerState currentState;
 
     [Header("플레이어 기본 설정")]
     public int playerID;
@@ -25,6 +32,19 @@ public class PlayerController : MonoBehaviour
     public List<Image> projectileSlotImages;
     public TextMeshProUGUI rerollCountText;
     public List<Image> itemSlotImages;
+
+    // ▼▼▼ [UITweener 시스템 복원] ▼▼▼
+    [Header("상태별 UI 설정")]
+    [Tooltip("상태에 따라 제어할 모든 UI 트위너들을 여기에 등록합니다.")]
+    public List<UITweener> allManagedTweeners;
+    [Tooltip("각 PlayerState 별로 활성화할 UI 트위너들을 지정합니다.")]
+    public List<UIStateSettings> uiStateSettings;
+
+    [Header("UI 사운드 설정")]
+    public AudioSource uiAudioSource;
+    public AudioClip uiSlideInSound;
+    public AudioClip uiSlideOutSound;
+    // ▲▲▲ [여기까지 복원] ▲▲▲
 
     [Header("상태별 시간 제한")]
     public float stageTimeLimit = 5.0f;
@@ -92,93 +112,104 @@ public class PlayerController : MonoBehaviour
         UpdateItemSelectionUI();
     }
 
+    // ★★★ [수정됨] Update 함수 전체를 switch 문으로 재구성하여 안정성 확보 ★★★
     void Update()
     {
-        if (currentState == PlayerState.Firing || currentState == PlayerState.Waiting)
-        {
-            playerMovement.UpdatePhysics();
-            return;
-        }
-
-        if (currentState == PlayerState.MakingGround)
-        {
-            currentStageTimer -= Time.deltaTime; // MakingGround 상태에 대한 시간 감소
-            if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
-            if (timerImage != null) timerImage.fillAmount = currentStageTimer / MakingGroundTime; // MakingGroundTime으로 변경
-            if (currentStageTimer <= 0)
-            {
-                Debug.Log($"우당탕탕 종료");
-                isMakingGround = false;
-                SetPlayerState(PlayerState.Waiting);
-                return;
-            }
-        }
-        else if (currentState != PlayerState.Moving)
-        {
-            currentStageTimer -= Time.deltaTime;
-            if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
-            if (timerImage != null) timerImage.fillAmount = currentStageTimer / stageTimeLimit;
-            if (currentStageTimer <= 0)
-            {
-                TransitionToNextStage(true);
-                return;
-            }
-        }
-
         switch (currentState)
-            {
-                case PlayerState.Moving:
-                    playerMovement.HandleMovement();
-                    HandleItemHotkeys();
-                    if (trajectory != null) trajectory.HideTrajectory();
-                    if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
-                    {
-                        TransitionToNextStage(false);
-                    }
-                    break;
-                case PlayerState.SelectingProjectile:
-                    playerMovement.UpdatePhysics();
-                    HandleProjectileSelection();
-                    break;
-                case PlayerState.AimingVertical:
-                    playerMovement.UpdatePhysics();
-                    playerAiming.HandleVerticalAim();
-                    if (trajectory != null) trajectory.ShowFixedTrajectory();
-                    if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
-                    break;
-                case PlayerState.AimingHorizontal:
-                    playerMovement.UpdatePhysics();
-                    playerAiming.HandleHorizontalAim();
-                    if (trajectory != null) trajectory.ShowFixedTrajectory();
-                    if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
-                    break;
-                case PlayerState.SettingPower:
-                    playerMovement.UpdatePhysics();
-                    playerShooting.HandlePowerSetting();
-                    if (trajectory != null) trajectory.ShowTrajectory();
-                    if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
-                    break;
-                case PlayerState.MakingGround:
+        {
+            case PlayerState.Waiting:
+            case PlayerState.Firing:
+                playerMovement.UpdatePhysics();
+                break;
+
+            case PlayerState.MakingGround:
+                currentStageTimer -= Time.deltaTime;
+                if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
+                if (timerImage != null) timerImage.fillAmount = currentStageTimer / MakingGroundTime;
+
+                if (currentStageTimer <= 0f)
+                {
+                    Debug.Log($"Player {playerID} 우당탕탕 종료");
+                    isMakingGround = false;
+                    SetPlayerState(PlayerState.Waiting);
+                }
+                else
+                {
                     HandleModifyKeys();
-                    break;
-            }
+                }
+                break;
+
+            case PlayerState.Moving:
+                playerMovement.HandleMovement();
+                HandleItemHotkeys();
+                if (trajectory != null) trajectory.HideTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
+                {
+                    TransitionToNextStage(false);
+                }
+                break;
+
+            case PlayerState.SelectingProjectile:
+            case PlayerState.AimingVertical:
+            case PlayerState.AimingHorizontal:
+            case PlayerState.SettingPower:
+                // 타이머 처리
+                currentStageTimer -= Time.deltaTime;
+                if (timerText != null) timerText.text = $"{currentStageTimer:F1} / {stageTimeLimit:F1}";
+                if (timerImage != null) timerImage.fillAmount = currentStageTimer / stageTimeLimit;
+
+                // 타임아웃 또는 입력에 따른 로직 처리
+                if (currentStageTimer <= 0f)
+                {
+                    TransitionToNextStage(true);
+                }
+                else
+                {
+                    HandleActiveTurnInput();
+                }
+                break;
+        }
     }
 
+    // 활성 턴 상태(탄 선택, 조준, 파워)의 입력을 처리하는 함수
+    private void HandleActiveTurnInput()
+    {
+        playerMovement.UpdatePhysics(); // 이동은 하지 않지만 물리 효과(중력 등)는 계속 적용
 
+        switch (currentState)
+        {
+            case PlayerState.SelectingProjectile:
+                HandleProjectileSelection();
+                break;
+            case PlayerState.AimingVertical:
+                playerAiming.HandleVerticalAim();
+                if (trajectory != null) trajectory.ShowFixedTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
+                break;
+            case PlayerState.AimingHorizontal:
+                playerAiming.HandleHorizontalAim();
+                if (trajectory != null) trajectory.ShowFixedTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
+                break;
+            case PlayerState.SettingPower:
+                playerShooting.HandlePowerSetting();
+                if (trajectory != null) trajectory.ShowTrajectory();
+                if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
+                break;
+        }
+    }
+
+    // 플레이어의 상태를 변경하고, 그에 맞는 UI를 표시하는 함수
     void SetPlayerState(PlayerState newState)
     {
         if (currentState == newState) return;
         currentState = newState;
         Debug.Log($"Player {playerID} 상태 변경: {newState}");
 
-        UpdateUIForState(currentState);
-
-        if (newState != PlayerState.Moving)
-        {
-            currentStageTimer = stageTimeLimit;
-        }
+        UpdateUIForState(currentState); // 상태가 변경될 때마다 UI 업데이트 호출
     }
 
+    // 턴 시작 시 호출되는 함수
     public void StartTurn()
     {
         playerMovement.ResetStamina();
@@ -189,31 +220,24 @@ public class PlayerController : MonoBehaviour
             playerShooting.SetProjectile(null);
         }
 
+        currentStageTimer = stageTimeLimit;
         SetPlayerState(PlayerState.Moving);
-        Debug.Log($"======== PLAYER {playerID} TURN START ========");
+        Debug.Log($"======== PLAYER {playerID} TURN START (타이머: {currentStageTimer}) ========");
     }
 
+    // 턴 종료 시 호출되는 함수
     public void EndTurn()
     {
-        if (projectileSlotImages != null)
-        {
-            foreach (var img in projectileSlotImages)
-            {
-                if (img != null) img.gameObject.SetActive(false);
-            }
-        }
-        if (rerollCountText != null)
-        {
-            rerollCountText.gameObject.SetActive(false);
-        }
-
         if (trajectory != null) trajectory.HideTrajectory();
         SetPlayerState(PlayerState.Waiting);
         Debug.Log($"Player {playerID}의 턴 종료!");
     }
 
+    // 다음 게임 단계로 전환하는 함수
     void TransitionToNextStage(bool isTimedOut)
     {
+        currentStageTimer = stageTimeLimit; // 다음 단계를 위해 타이머 초기화
+
         switch (currentState)
         {
             case PlayerState.Moving:
@@ -242,6 +266,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // 탄 선택 입력 처리
     void HandleProjectileSelection()
     {
         if (Input.GetKeyDown(KeyCode.Alpha1)) SelectProjectile(0);
@@ -257,6 +282,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // 3개의 무작위 탄 생성
     void GenerateProjectileSelection()
     {
         currentSelection.Clear();
@@ -266,7 +292,6 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // ★★★ [수정] 겹치지 않게 섞는 방식 대신, 3번의 완전한 무작위 선택으로 변경합니다. (중복 허용) ★★★
         for (int i = 0; i < 3; i++)
         {
             int randomIndex = Random.Range(0, projectileDatabase.Count);
@@ -281,6 +306,7 @@ public class PlayerController : MonoBehaviour
         UpdateProjectileSelectionUI();
     }
 
+    // 탄 선택 확정
     void SelectProjectile(int index, bool transition = true)
     {
         if (index < 0 || index >= currentSelection.Count) return;
@@ -298,6 +324,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // 탄 선택 UI 아이콘 업데이트
     void UpdateProjectileSelectionUI()
     {
         if (projectileSlotImages == null) return;
@@ -314,37 +341,70 @@ public class PlayerController : MonoBehaviour
                 projectileSlotImages[i].gameObject.SetActive(false);
             }
         }
-        if (rerollCountText != null) rerollCountText.text = $"Reroll: {rerollChances}";
+        if (rerollCountText != null) rerollCountText.text = $"{rerollChances}";
     }
 
+    // ▼▼▼ [UITweener 시스템 복원 및 수정] ▼▼▼
     void UpdateUIForState(PlayerState state)
     {
-        bool isMoving = state == PlayerState.Moving;
-        bool isSelecting = state == PlayerState.SelectingProjectile;
-        bool isAimingOrPower = state == PlayerState.AimingVertical || state == PlayerState.AimingHorizontal || state == PlayerState.SettingPower;
-
-        if (staminaImage != null && staminaImage.transform.parent != null) staminaImage.transform.parent.gameObject.SetActive(isMoving);
-        if (timerImage != null && timerImage.transform.parent != null) timerImage.transform.parent.gameObject.SetActive(isAimingOrPower || isSelecting);
-        if (powerImage != null && powerImage.transform.parent != null) powerImage.transform.parent.gameObject.SetActive(state == PlayerState.SettingPower);
-
-        if (projectileSlotImages != null)
-        {
-            foreach (var img in projectileSlotImages)
-            {
-                if (img != null) img.gameObject.SetActive(isSelecting);
-            }
-        }
-        if (rerollCountText != null)
-        {
-            rerollCountText.gameObject.SetActive(isSelecting);
-        }
-
+        // 상태 텍스트는 항상 업데이트
         if (statusText != null)
         {
             statusText.gameObject.SetActive(true);
-            statusText.text = state.ToString();
+            switch (state)
+            {
+                case PlayerState.Moving:
+                    statusText.text = "이동 모드";
+                    staminaImage.gameObject.SetActive(true);
+                    powerText.gameObject.SetActive(false);
+                    powerImage.gameObject.SetActive(false);
+                    timerImage.gameObject.SetActive(false);
+                    timerText.gameObject.SetActive(false);
+                    break;
+                case PlayerState.SelectingProjectile:
+                    statusText.text = "탄 선택 모드";
+                    staminaImage.gameObject.SetActive(false);
+                    powerText.gameObject.SetActive(true);
+                    powerImage.gameObject.SetActive(true);
+                    timerImage.gameObject.SetActive(true);
+                    timerText.gameObject.SetActive(true);
+                    break;
+                case PlayerState.AimingVertical: statusText.text = "수직 조준"; break;
+                case PlayerState.AimingHorizontal: statusText.text = "수평 조준"; break;
+                case PlayerState.SettingPower: statusText.text = "파워 조절"; break;
+                case PlayerState.Waiting:
+                case PlayerState.Firing: statusText.text = "대기중..."; break;
+                case PlayerState.MakingGround: statusText.text = "우당탕탕!"; break;
+                default: statusText.text = state.ToString(); break;
+            }
+        }
+
+        // 현재 상태에 맞는 UI 설정을 인스펙터 리스트에서 찾음
+        UIStateSettings currentSettings = uiStateSettings.Find(s => s.state == state);
+
+        // 보여줘야 할 트위너 리스트를 결정 (설정이 없으면 빈 리스트)
+        List<UITweener> tweenersToShow = (currentSettings != null) ? currentSettings.activeTweeners : new List<UITweener>();
+
+        // 관리하는 모든 트위너를 순회
+        if (allManagedTweeners != null)
+        {
+            foreach (var tweener in allManagedTweeners)
+            {
+                if (tweener == null) continue;
+
+                // 보여줘야 할 리스트에 포함되어 있으면 Show, 아니면 Hide 호출
+                if (tweenersToShow.Contains(tweener))
+                {
+                    tweener.Show(uiAudioSource, uiSlideInSound);
+                }
+                else
+                {
+                    tweener.Hide(uiAudioSource, uiSlideOutSound);
+                }
+            }
         }
     }
+    // ▲▲▲ [여기까지 복원 및 수정] ▲▲▲
 
     public bool IsAimingOrSettingPower()
     {
@@ -358,8 +418,7 @@ public class PlayerController : MonoBehaviour
         return playerShooting.GetCurrentLaunchPower();
     }
 
-    // 아이템 함수
-
+    // 아이템 단축키 처리
     private void HandleItemHotkeys()
     {
         if (Input.GetKeyDown(KeyCode.Alpha1)) UseItem(0);
@@ -369,6 +428,7 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha5)) UseItem(4);
     }
 
+    // 아이템 사용
     public void UseItem(int index)
     {
         if (index < 0 || index >= ItemList.Count)
@@ -383,6 +443,7 @@ public class PlayerController : MonoBehaviour
         UpdateItemSelectionUI();
     }
 
+    // 아이템 효과 적용
     public void ApplyEffect_GameObject(ItemType item)
     {
         PlayerMovement playerMovement = gameManager.players_movement[playerID];
@@ -405,6 +466,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // 아이템 슬롯 UI 업데이트
     public void UpdateItemSelectionUI()
     {
         if (itemSlotImages == null) return;
@@ -426,6 +488,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // 아이템 타입에 맞는 아이콘 반환
     private Sprite GetItemIcon(ItemType type)
     {
         switch (type)
@@ -437,7 +500,8 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleModifyKeys()  // 우당탕탕 만들때 만든 함수
+    // '우당탕탕' 중 마우스 입력 처리
+    private void HandleModifyKeys()
     {
         if (Input.GetMouseButtonDown(0))
         {
@@ -467,18 +531,20 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void MakeGround()  // 우당탕탕 만들때 만든 함수
+    // '우당탕탕' 시작
+    public void MakeGround()
     {
-        if(!isMakingGround)
+        if (!isMakingGround)
         {
-            Debug.Log($"Player {playerID + 1} 우당탕탕 시작");
             isMakingGround = true;
-            currentState = PlayerState.MakingGround;
             currentStageTimer = MakingGroundTime;
+            Debug.Log($"Player {playerID} 우당탕탕 시작 (지속 시간: {currentStageTimer}초)");
+            SetPlayerState(PlayerState.MakingGround);
         }
     }
 }
 
+// 포탄 정보를 담는 클래스
 [System.Serializable]
 public class ProjectileData
 {

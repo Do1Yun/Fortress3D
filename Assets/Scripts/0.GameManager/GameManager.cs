@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -17,6 +18,9 @@ public class GameManager : MonoBehaviour
     [Header("메인카메라 지정")]
     public CameraController mainCameraController;
     public GameObject MGCamera;
+
+    [Header("UI 연결")]
+    public TextMeshProUGUI turnDisplayText;
 
     [Header("플레이어 수 지정")]
     public int minPlayersForGame = 2;
@@ -80,26 +84,35 @@ public class GameManager : MonoBehaviour
             if (player != null) player.EndTurn();
         }
 
-        StartCoroutine(StartGameAfterDelay(1.5f));
+        StartCoroutine(StartGameAfterDelay(1.0f));
     }
+
 
     IEnumerator StartGameAfterDelay(float delay)
     {
-        // 우당탕탕 관련
         SetGameState(GameState.MakeGround);
         if (mainCameraController != null)
         {
             mainCameraController.SetCamera(MGCamera.transform);
         }
-        players[currentPlayerIndex].MakeGround();
-        yield return new WaitWhile(() => players[currentPlayerIndex].isMakingGround);
 
-        yield return new WaitForSeconds(delay);
+        // ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
+        if (turnDisplayText != null)
+        {
+            turnDisplayText.text = "전투 준비!";
+        }
+        // ▲▲▲ [여기까지 추가] ▲▲▲
 
-        players[currentPlayerIndex + 1].MakeGround();
-        yield return new WaitWhile(() => players[currentPlayerIndex + 1].isMakingGround);
-        // 관련 끝
+        // 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
+        foreach (var player in players)
+        {
+            player.MakeGround();
+            // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
+            yield return new WaitForSeconds(player.MakingGroundTime);
+            yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
+        }
 
+        // '우당탕탕' 종료 후 첫 번째 플레이어의 턴을 시작합니다.
         PlayerController firstPlayer = players[currentPlayerIndex];
         if (mainCameraController != null)
         {
@@ -107,6 +120,11 @@ public class GameManager : MonoBehaviour
         }
 
         yield return new WaitForSeconds(delay);
+
+        if (turnDisplayText != null)
+        {
+            turnDisplayText.text = $"P{firstPlayer.playerID + 1}";
+        }
 
         firstPlayer.StartTurn();
 
@@ -177,6 +195,11 @@ public class GameManager : MonoBehaviour
             mainCameraController.SetTarget(nextPlayer.transform);
         }
 
+        if (turnDisplayText != null)
+        {
+            turnDisplayText.text = $"P{nextPlayer.playerID + 1}";
+        }
+
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
         Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!");
@@ -231,8 +254,6 @@ public class GameManager : MonoBehaviour
     void Item_Reset() // 턴이 넘어가면 아이템 영향 초기화
     {
         players[currentPlayerIndex].trajectory.isPainted = true;
-        // ★[수정] 스테미너를 잘못 초기화하던 문제의 코드 라인을 삭제했습니다.
-        // players_movement[currentPlayerIndex].maxStamina = players_movement[currentPlayerIndex].currentStamina;
         players[currentPlayerIndex].ExplosionRange = players[currentPlayerIndex].BasicExplosionRange;
     }
 
@@ -242,3 +263,4 @@ public class GameManager : MonoBehaviour
         else return false;
     }
 }
+
