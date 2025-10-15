@@ -511,7 +511,7 @@ public class PlayerController : MonoBehaviour
             if (Physics.Raycast(ray, out hit))
             {
                 Vector3 groundPoint = hit.point;
-                Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 100, groundPoint.z);
+                Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 11, groundPoint.z);
                 Instantiate(projectileDatabase[2].prefab, SpawnPosition, Quaternion.identity);
                 Debug.Log("지형 생성 포탄 생성");
             }
@@ -524,7 +524,7 @@ public class PlayerController : MonoBehaviour
             if (Physics.Raycast(ray, out hit))
             {
                 Vector3 groundPoint = hit.point;
-                Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 100, groundPoint.z);
+                Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 11, groundPoint.z);
                 Instantiate(projectileDatabase[1].prefab, SpawnPosition, Quaternion.identity);
                 Debug.Log("지형 파괴 포탄 생성");
             }
