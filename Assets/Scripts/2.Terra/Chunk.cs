@@ -206,10 +206,11 @@ public class Chunk : MonoBehaviour
 
                         if (distance < radius)
                         {
-                            if (y <= bedrockHeight && totalModificationAmount < 0)
-                            {
-                                continue;
-                            }
+                            //지형파괴 삭제
+                            //if (y <= bedrockHeight && totalModificationAmount < 0)
+                            //{
+                            //    continue;
+                            //} 
                             if (y >= buildHeightLimit && totalModificationAmount > 0)
                             {
                                 continue;
