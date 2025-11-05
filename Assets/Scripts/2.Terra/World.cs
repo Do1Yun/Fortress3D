@@ -10,7 +10,8 @@ public class World : MonoBehaviour
     public Vector2Int worldSizeInChunks = new Vector2Int(4, 4);
 
     private Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
-        private List<CaptureZone> captureZones;
+    private List<CaptureZone> captureZones;
+    private List<SpawnZone> spawnZones;
 
     void Awake()
     {
@@ -23,6 +24,7 @@ public class World : MonoBehaviour
             Instance = this;
         }
          captureZones = new List<CaptureZone>(FindObjectsOfType<CaptureZone>());
+        spawnZones = new List<SpawnZone>(FindObjectsOfType<SpawnZone>());
 
     }
 
@@ -59,7 +61,27 @@ public class World : MonoBehaviour
     }
 
     public void ModifyTerrain(Vector3 worldPos, float modificationAmount, float radius)
-    { foreach (CaptureZone zone in captureZones)
+    {
+        foreach (SpawnZone zone in spawnZones)
+        {
+            // 1. AABB(축 정렬 경계 상자)로 1차 고속 검사
+            //    수정 지점(worldPos)이 일단 콜라이더의 바운더리 박스 안에 있는지 확인
+            if (zone.zoneCollider.bounds.Contains(worldPos))
+            {
+                // 2. 1차 통과 시, 더 정밀한 2차 검사
+                //    Collider.ClosestPoint()는 콜라이더 표면(또는 내부)에서 worldPos와 가장 가까운 점을 반환
+                Vector3 closestPoint = zone.zoneCollider.ClosestPoint(worldPos);
+
+                // 만약 가장 가까운 점과 worldPos 사이의 거리가 매우 가깝다면 (거의 0)
+                // worldPos는 콜라이더 내부에 있는 것으로 간주합니다.
+                if (Vector3.Distance(closestPoint, worldPos) < 0.001f)
+                {
+                    Debug.Log("스폰 지점 보호 지역 안에서는 지형을 변경할 수 없습니다.");
+                    return; // 함수를 즉시 종료하여 지형 변경을 막습니다.
+                }
+            }
+        }
+        foreach (CaptureZone zone in captureZones)
         {
             // 폭발 지점과 거점 중심 사이의 거리를 계산합니다.
             float distanceToZone = Vector3.Distance(worldPos, zone.transform.position);
