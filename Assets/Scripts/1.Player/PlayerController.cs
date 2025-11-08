@@ -75,6 +75,10 @@ public class PlayerController : MonoBehaviour
     public bool isMakingGround = false;
     public Camera mainCamera;
 
+    [Header("특수탄 설정")]
+    public KeyCode chaserModeKey = KeyCode.M;
+    [HideInInspector] public bool isNextShotChaser = false;
+
     private float currentStageTimer = 5.0f;
 
     void Awake()
@@ -112,7 +116,6 @@ public class PlayerController : MonoBehaviour
         UpdateItemSelectionUI();
     }
 
-    // ★★★ [수정됨] Update 함수 전체를 switch 문으로 재구성하여 안정성 확보 ★★★
     void Update()
     {
         switch (currentState)
@@ -165,6 +168,12 @@ public class PlayerController : MonoBehaviour
                 }
                 else
                 {
+                    // M키 입력 감지
+                    if (Input.GetKeyDown(chaserModeKey))
+                    {
+                        ToggleChaserMode();
+                    }
+
                     HandleActiveTurnInput();
                 }
                 break;
@@ -174,7 +183,7 @@ public class PlayerController : MonoBehaviour
     // 활성 턴 상태(탄 선택, 조준, 파워)의 입력을 처리하는 함수
     private void HandleActiveTurnInput()
     {
-        playerMovement.UpdatePhysics(); // 이동은 하지 않지만 물리 효과(중력 등)는 계속 적용
+        playerMovement.UpdatePhysics();
 
         switch (currentState)
         {
@@ -206,7 +215,7 @@ public class PlayerController : MonoBehaviour
         currentState = newState;
         Debug.Log($"Player {playerID} 상태 변경: {newState}");
 
-        UpdateUIForState(currentState); // 상태가 변경될 때마다 UI 업데이트 호출
+        UpdateUIForState(currentState);
     }
 
     // 턴 시작 시 호출되는 함수
@@ -214,6 +223,7 @@ public class PlayerController : MonoBehaviour
     {
         playerMovement.ResetStamina();
         selectedProjectile = null;
+        isNextShotChaser = false;
 
         if (playerShooting != null)
         {
@@ -236,7 +246,7 @@ public class PlayerController : MonoBehaviour
     // 다음 게임 단계로 전환하는 함수
     void TransitionToNextStage(bool isTimedOut)
     {
-        currentStageTimer = stageTimeLimit; // 다음 단계를 위해 타이머 초기화
+        currentStageTimer = stageTimeLimit;
 
         switch (currentState)
         {
@@ -245,11 +255,13 @@ public class PlayerController : MonoBehaviour
                 SetPlayerState(PlayerState.SelectingProjectile);
                 break;
             case PlayerState.SelectingProjectile:
+                // ▼▼▼ [수정됨] 타임아웃/미선택 시 첫 번째 탄으로 자동 선택 ▼▼▼
                 if (selectedProjectile == null)
                 {
                     Debug.Log("포탄을 선택하지 않아 첫 번째 포탄으로 자동 선택됩니다.");
-                    SelectProjectile(0, false);
+                    SelectProjectile(0, false); // 자동으로 0번 탄 선택 (전환은 X)
                 }
+                // ▲▲▲ [여기까지 수정] ▲▲▲
                 SetPlayerState(PlayerState.AimingVertical);
                 break;
             case PlayerState.AimingVertical:
@@ -344,10 +356,8 @@ public class PlayerController : MonoBehaviour
         if (rerollCountText != null) rerollCountText.text = $"{rerollChances}";
     }
 
-    // ▼▼▼ [UITweener 시스템 복원 및 수정] ▼▼▼
     void UpdateUIForState(PlayerState state)
     {
-        // 상태 텍스트는 항상 업데이트
         if (statusText != null)
         {
             statusText.gameObject.SetActive(true);
@@ -379,20 +389,14 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // 현재 상태에 맞는 UI 설정을 인스펙터 리스트에서 찾음
         UIStateSettings currentSettings = uiStateSettings.Find(s => s.state == state);
-
-        // 보여줘야 할 트위너 리스트를 결정 (설정이 없으면 빈 리스트)
         List<UITweener> tweenersToShow = (currentSettings != null) ? currentSettings.activeTweeners : new List<UITweener>();
 
-        // 관리하는 모든 트위너를 순회
         if (allManagedTweeners != null)
         {
             foreach (var tweener in allManagedTweeners)
             {
                 if (tweener == null) continue;
-
-                // 보여줘야 할 리스트에 포함되어 있으면 Show, 아니면 Hide 호출
                 if (tweenersToShow.Contains(tweener))
                 {
                     tweener.Show(uiAudioSource, uiSlideInSound);
@@ -404,7 +408,6 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
-    // ▲▲▲ [여기까지 복원 및 수정] ▲▲▲
 
     public bool IsAimingOrSettingPower()
     {
@@ -542,6 +545,56 @@ public class PlayerController : MonoBehaviour
             SetPlayerState(PlayerState.MakingGround);
         }
     }
+
+    public void ToggleChaserMode()
+    {
+        isNextShotChaser = !isNextShotChaser;
+        Debug.Log("추적자 모드 변경: " + (isNextShotChaser ? "ON" : "OFF"));
+        if (statusText != null)
+        {
+            // ▼▼▼ [수정] 추적자 모드일 때 상태 텍스트 변경 ▼▼▼
+            if (isNextShotChaser)
+            {
+                statusText.text = "특수탄: 추적자";
+            }
+            else
+            {
+                // 현재 상태에 맞게 텍스트 복원
+                UpdateUIForState(currentState);
+            }
+            // ▲▲▲ [여기까지 수정] ▲▲▲
+        }
+    }
+
+    public void ResetChaserModeAfterFire()
+    {
+        if (isNextShotChaser)
+        {
+            isNextShotChaser = false;
+            Debug.Log("추적자 모드 사용됨. 다음 턴을 위해 초기화.");
+        }
+    }
+
+    // ▼▼▼ [추가됨] 선택한 탄의 타입을 PlayerShooting에 전달하는 함수 ▼▼▼
+    public ProjectileType GetSelectedProjectileType()
+    {
+        if (selectedProjectile != null)
+        {
+            return selectedProjectile.type;
+        }
+
+        // 만약 플레이어가 탄을 선택하지 않았다면 (예: 시간 초과)
+        // 자동으로 선택된(또는 될) 0번 탄의 타입을 반환
+        if (currentSelection.Count > 0)
+        {
+            return currentSelection[0].type;
+        }
+
+        // 최악의 경우 (데이터베이스가 비어있는 등)
+        Debug.LogError("선택된 포탄이 없으며, 현재 포탄 목록도 비어있습니다. NormalImpact로 대체합니다.");
+        return ProjectileType.NormalImpact;
+    }
+    // ▲▲▲ [여기까지 추가] ▲▲▲
 }
 
 // 포탄 정보를 담는 클래스
@@ -552,4 +605,3 @@ public class ProjectileData
     public GameObject prefab;
     public Sprite icon;
 }
-
