@@ -23,18 +23,33 @@ public class World : MonoBehaviour
         {
             Instance = this;
         }
-         captureZones = new List<CaptureZone>(FindObjectsOfType<CaptureZone>());
-        spawnZones = new List<SpawnZone>(FindObjectsOfType<SpawnZone>());
 
+        // 보호 구역은 Awake에서 찾아두는 것이 좋습니다.
+        captureZones = new List<CaptureZone>(FindObjectsOfType<CaptureZone>());
+        spawnZones = new List<SpawnZone>(FindObjectsOfType<SpawnZone>());
     }
 
     void Start()
     {
-        GenerateWorld();
+        
+       
+        if (Application.isPlaying)
+        {
+            GenerateWorld();
+        }
+      
     }
 
-    void GenerateWorld()
+    [ContextMenu("Generate World (Editor)")]
+    public void GenerateWorld()
     {
+        // 1. 맵 생성 전, 기존 맵이 있다면 삭제합니다.
+        ClearWorld();
+
+        // 2. (중요) 에디터에서 실행 시 보호 구역 리스트를 다시 찾아옵니다.
+        captureZones = new List<CaptureZone>(FindObjectsOfType<CaptureZone>());
+        spawnZones = new List<SpawnZone>(FindObjectsOfType<SpawnZone>());
+
         if (chunkPrefab == null)
         {
             Debug.LogError("Chunk Prefab이 할당되지 않았습니다!");
@@ -60,37 +75,42 @@ public class World : MonoBehaviour
         }
     }
 
+    // 인스펙터의 컨텍스트 메뉴(점 3개)에 "Clear World (Editor)" 옵션을 추가합니다.
+    [ContextMenu("Clear World (Editor)")]
+    public void ClearWorld()
+    {
+        chunks.Clear();
+
+        // 자식 오브젝트(청크들)를 파괴합니다.
+        // 에디터 모드에서는 DestroyImmediate를 사용해야 안전합니다.
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(transform.GetChild(i).gameObject);
+        }
+    }
+
+
     public void ModifyTerrain(Vector3 worldPos, float modificationAmount, float radius)
     {
         foreach (SpawnZone zone in spawnZones)
         {
-            // 1. AABB(축 정렬 경계 상자)로 1차 고속 검사
-            //    수정 지점(worldPos)이 일단 콜라이더의 바운더리 박스 안에 있는지 확인
             if (zone.zoneCollider.bounds.Contains(worldPos))
             {
-                // 2. 1차 통과 시, 더 정밀한 2차 검사
-                //    Collider.ClosestPoint()는 콜라이더 표면(또는 내부)에서 worldPos와 가장 가까운 점을 반환
                 Vector3 closestPoint = zone.zoneCollider.ClosestPoint(worldPos);
-
-                // 만약 가장 가까운 점과 worldPos 사이의 거리가 매우 가깝다면 (거의 0)
-                // worldPos는 콜라이더 내부에 있는 것으로 간주합니다.
                 if (Vector3.Distance(closestPoint, worldPos) < 0.001f)
                 {
                     Debug.Log("스폰 지점 보호 지역 안에서는 지형을 변경할 수 없습니다.");
-                    return; // 함수를 즉시 종료하여 지형 변경을 막습니다.
+                    return;
                 }
             }
         }
         foreach (CaptureZone zone in captureZones)
         {
-            // 폭발 지점과 거점 중심 사이의 거리를 계산합니다.
             float distanceToZone = Vector3.Distance(worldPos, zone.transform.position);
-
-            // 만약 거리가 거점의 반경보다 작거나 같다면 (즉, 거점 안이라면)
             if (distanceToZone <= zone.captureRadius)
             {
                 Debug.Log("거점 보호 지역 안에서는 지형을 변경할 수 없습니다.");
-                return; // 함수를 즉시 종료하여 지형 변경을 막습니다.
+                return;
             }
         }
         int chunkSize = chunkPrefab.GetComponent<Chunk>().chunkSize;
@@ -106,7 +126,6 @@ public class World : MonoBehaviour
                 Vector3Int chunkPos = new Vector3Int(x, 0, z);
                 if (chunks.TryGetValue(chunkPos, out Chunk chunk))
                 {
-                    // 청크의 ModifyTerrain 메서드 호출
                     chunk.ModifyTerrain(worldPos, modificationAmount, radius);
                 }
             }
