@@ -221,7 +221,7 @@ public class PlayerController : MonoBehaviour
     // 턴 시작 시 호출되는 함수
     public void StartTurn()
     {
-        playerMovement.ResetStamina();
+        playerMovement.ResetSpeed();
         selectedProjectile = null;
         isNextShotChaser = false;
 
@@ -515,7 +515,7 @@ public class PlayerController : MonoBehaviour
             {
                 Vector3 groundPoint = hit.point;
                 Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 11, groundPoint.z);
-                Instantiate(projectileDatabase[2].prefab, SpawnPosition, Quaternion.identity);
+                Instantiate(projectileDatabase[2].prefab, SpawnPosition, Quaternion.Euler(180f, 0f, 0f));
                 Debug.Log("지형 생성 포탄 생성");
             }
         }
@@ -528,7 +528,7 @@ public class PlayerController : MonoBehaviour
             {
                 Vector3 groundPoint = hit.point;
                 Vector3 SpawnPosition = new Vector3(groundPoint.x, groundPoint.y + 11, groundPoint.z);
-                Instantiate(projectileDatabase[1].prefab, SpawnPosition, Quaternion.identity);
+                Instantiate(projectileDatabase[1].prefab, SpawnPosition, Quaternion.Euler(180f, 0f, 0f));
                 Debug.Log("지형 파괴 포탄 생성");
             }
         }

@@ -18,6 +18,7 @@ public class Projectile : MonoBehaviour
     public float lifeTime = 5.0f;
     public float explosionRadius;
     public GameObject explosionEffectPrefab;
+    private float rotationSmoothSpeed = 10f; // <-- 포탄 머리 방향 보간 속도
 
     [Header("타입별 설정")]
     public float terrainModificationStrength = 2.0f;
@@ -42,6 +43,14 @@ public class Projectile : MonoBehaviour
             Vector3 windForce = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
             rb.AddForce(windForce, ForceMode.Force);
         }
+        // ▼▼▼▼▼▼▼▼▼▼▼▼ 포탄 머리방향 설정
+        if (rb != null && rb.velocity.sqrMagnitude > 0.01f)
+        {
+            // 목표 회전값 = 현재 속도 방향
+            Quaternion targetRotation = Quaternion.LookRotation(rb.velocity.normalized);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation * Quaternion.Euler(90f, 0f, 0f), Time.deltaTime * rotationSmoothSpeed);
+        }
+        // ▲▲▲▲▲▲▲▲▲▲▲▲
     }
     void Start()
     {
@@ -58,7 +67,7 @@ public class Projectile : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         // 이미 폭발했다면 아무것도 하지 않습니다.
-        if (hasExploded) return;
+        if (collision.gameObject.CompareTag("Bullet") || hasExploded) return;
 
         // 즉시 폭발하고, 이벤트를 전파한 후, 오브젝트를 파괴합니다.
         Explode(collision.contacts[0].point);

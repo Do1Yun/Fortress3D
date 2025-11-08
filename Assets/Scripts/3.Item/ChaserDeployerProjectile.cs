@@ -14,6 +14,8 @@ public class ChaserDeployerProjectile : MonoBehaviour
 
     private bool isLanded = false;
     private float lifeTime = 15.0f;
+    private float rotationSmoothSpeed = 10f;
+    private Rigidbody rb;
 
     // ▼▼▼ [추가됨] PlayerShooting이 이 함수를 호출하여 탄 타입을 주입 ▼▼▼
     /// <summary>
@@ -29,8 +31,25 @@ public class ChaserDeployerProjectile : MonoBehaviour
     void Start()
     {
         Destroy(gameObject, lifeTime);
+        rb = GetComponent<Rigidbody>();
     }
-
+    void FixedUpdate()
+    {
+        // WindController가 존재하고, 이 오브젝트의 태그가 "Bullet"일 때만 힘을 적용합니다.
+        if (WindController.instance != null && gameObject.CompareTag("Bullet"))
+        {
+            Vector3 windForce = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
+            rb.AddForce(windForce, ForceMode.Force);
+        }
+        // ▼▼▼▼▼▼▼▼▼▼▼▼ 포탄 머리방향 설정
+        if (rb != null && rb.velocity.sqrMagnitude > 0.01f)
+        {
+            // 목표 회전값 = 현재 속도 방향
+            Quaternion targetRotation = Quaternion.LookRotation(rb.velocity.normalized);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation * Quaternion.Euler(90f, 0f, 0f), Time.deltaTime * rotationSmoothSpeed);
+        }
+        // ▲▲▲▲▲▲▲▲▲▲▲▲
+    }
     void OnCollisionEnter(Collision collision)
     {
         if (isLanded) return;

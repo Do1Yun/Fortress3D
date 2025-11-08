@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: -5610295238919724642}
   m_Layer: 0
   m_Name: ChaserDeployer_Push
-  m_TagString: Untagged
+  m_TagString: Bullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -78,7 +78,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chaserUnitPrefab: {fileID: 7641240912769305325, guid: e1b9dc408f8ce534a8ee1e335c1b2f45, type: 3}
-  payloadType: 0
 --- !u!33 &5453385155756176237
 MeshFilter:
   m_ObjectHideFlags: 0

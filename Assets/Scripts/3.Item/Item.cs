@@ -102,28 +102,4 @@ public class Item : MonoBehaviour
             }
         }
     }
-
-    // PlayerController.cs 에 코드 옮김
-    // public void ApplyEffect_GameObject(ItemType item)
-    // {
-    //     PlayerMovement playerMovement = gameManager.players_movement[gameManager.currentPlayerIndex];
-    //     PlayerController Player = gameManager.players[gameManager.currentPlayerIndex];
-    //     PlayerController nextPlayer = gameManager.players[(gameManager.currentPlayerIndex + 1) % 2];
-
-    //     switch (item)
-    //     {
-    //         case ItemType.Health:
-    //             playerMovement.maxStamina *= 2;
-    //             // playerMovement.staminaDrainRate /= 2; 로 할까 고민중
-    //             break;
-
-    //         case ItemType.Range:
-    //             Player.ExplosionRange *= 2;
-    //             break;
-
-    //         case ItemType.TurnOff:
-    //             nextPlayer.trajectory.isPainted = false;
-    //             break;
-    //     }
-    // }
 }
