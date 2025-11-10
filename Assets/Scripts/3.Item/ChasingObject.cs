@@ -30,6 +30,7 @@ public class ChasingObject : MonoBehaviour
     public float raycastHeightOffset = 0.5f;
 
     [Header("폭발 설정")]
+    [Tooltip("기본 폭발 반지름. PlayerController의 아이템 효과에 의해 덮어쓰일 수 있습니다.")]
     public float explosionRadius = 5.0f;
     public GameObject explosionEffectPrefab;
     public float terrainModificationStrength = 2.0f;
@@ -66,15 +67,29 @@ public class ChasingObject : MonoBehaviour
         }
     }
 
-    public void Initialize(ProjectileType type)
+    /// <summary>
+    /// ChaserDeployerProjectile(알)에 의해 호출됩니다.
+    /// </summary>
+    public void Initialize(ProjectileType type, float newRadius)
     {
         this.explosionType = type;
         this.isActivated = true;
+        this.explosionRadius = newRadius;
 
         float stopDist = (type == ProjectileType.TerrainPull) ? explosionRadius : detonationDistance;
-        Debug.Log($"[CHASER_DEBUG] 추적자 활성화! 임무: {type}. 정지 거리: {stopDist}m (Radius: {explosionRadius}m / Detonation: {detonationDistance}m)");
+        Debug.Log($"[CHASER_DEBUG] 추적자 활성화! 임무: {type}. 정지 거리: {stopDist}m (Radius: {this.explosionRadius}m / Detonation: {detonationDistance}m)");
 
         Invoke("Explode", selfDestructTime);
+    }
+
+    /// <summary>
+    /// (호환성 유지용) 반지름 값 없이 호출될 경우, 
+    /// 이 스크립트에 설정된 기본 explosionRadius 값을 사용합니다.
+    /// </summary>
+    public void Initialize(ProjectileType type)
+    {
+        Initialize(type, this.explosionRadius);
+        Debug.LogWarning($"[CHASER_DEBUG] 구형 Initialize(type)가 호출되었습니다. ChaserDeployerProjectile이 newRadius를 전달하도록 수정해야 합니다.");
     }
 
     void Update()
@@ -122,7 +137,6 @@ public class ChasingObject : MonoBehaviour
         Vector3 verticalMove = new Vector3(0, action.potentialMoveDelta.y, 0);
         float horizontalMoveDistance = horizontalMove.magnitude;
 
-        // distanceToBoundary가 0보다 클 때만 이 로직을 실행 (이미 경계를 넘었을 경우 제외)
         float distanceToBoundary = currentHorizontalDistance - stoppingDistance;
 
         if (action.isChasing && horizontalMoveDistance > distanceToBoundary && distanceToBoundary > 0)
@@ -241,6 +255,7 @@ public class ChasingObject : MonoBehaviour
         }
     }
 
+    // ▼▼▼ [수정됨] HandleInstantEffect에서 잘못된 코드를 모두 제거하고 정리 ▼▼▼
     private void HandleInstantEffect()
     {
         Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius);
@@ -281,9 +296,12 @@ public class ChasingObject : MonoBehaviour
                     }
                 }
                 break;
+                // ▲▲▲ [수정됨] TerrainPull 케이스가 여기서 깔끔하게 끝납니다.
         }
     }
+    // ▲▲▲ [여기까지 수정] ▲▲▲
 
+    // ▼▼▼ [수정됨] 잘못된 위치에서 분리되어 별도 코루틴으로 복원 ▼▼▼
     private IEnumerator SlowModifyTerrainEffect()
     {
         if (terrainEffectSteps <= 0) terrainEffectSteps = 1;
@@ -315,8 +333,9 @@ public class ChasingObject : MonoBehaviour
         }
         Destroy(gameObject);
     }
+    // ▲▲▲ [여기까지 수정] ▲▲▲
 
-    // ▼▼▼ [수정됨] CS0019 오류 수정 ▼▼▼
+    // ▼▼▼ [수정됨] 잘못된 위치에서 분리되어 클래스 레벨로 복원 ▼▼▼
     void OnDrawGizmosSelected()
     {
         if (controller == null) return;
@@ -326,8 +345,8 @@ public class ChasingObject : MonoBehaviour
         Gizmos.DrawLine(cliffRayStart, cliffRayStart + (Vector3.down * cliffCheckRayLength));
         Gizmos.color = Color.green;
 
-        // Gizmos.DrawLine(slopeRayStart, slopeRayStart + (Vector3.down * slopeRayStart + (Vector3.down * slopeRaycastLength))); // <-- 문제의 코드
-        Gizmos.DrawLine(slopeRayStart, slopeRayStart + (Vector3.down * slopeRaycastLength)); // <-- 수정된 코드
+        Gizmos.DrawLine(slopeRayStart, slopeRayStart + (Vector3.down * slopeRaycastLength));
     }
     // ▲▲▲ [여기까지 수정] ▲▲▲
-}
+
+} // <- 클래스를 닫는 마지막 중괄호
