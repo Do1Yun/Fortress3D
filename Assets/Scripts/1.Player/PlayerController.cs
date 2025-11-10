@@ -224,6 +224,7 @@ public class PlayerController : MonoBehaviour
     // 턴 시작 시 호출되는 함수
     public void StartTurn()
     {
+        playerMovement.ResetStamina();
         playerMovement.ResetSpeed();
         using_chasingItem = false;
         selectedProjectile = null;

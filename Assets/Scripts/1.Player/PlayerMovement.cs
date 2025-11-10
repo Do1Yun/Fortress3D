@@ -22,7 +22,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
-    [HideInInspector] public float currentStamina;
+    public float currentStamina;
 
     private float baseMaxStamina;
     private Image staminaImage;
@@ -71,6 +71,14 @@ public class PlayerMovement : MonoBehaviour
     {
         speedMultiplier = 1;
     }
+
+    public void ResetStamina()
+    {
+        maxStamina = baseMaxStamina;
+        currentStamina = maxStamina;
+        UpdateStaminaUI();
+    }
+
 
     public void HandleMovement()
     {
