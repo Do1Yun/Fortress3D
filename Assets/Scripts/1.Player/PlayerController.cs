@@ -65,7 +65,8 @@ public class PlayerController : MonoBehaviour
     public List<ItemType> ItemList = new List<ItemType>();
     public int maxItemCount = 5;
     private GameManager gameManager;
-    public Sprite healthIcon, rangeIcon, turnoffIcon;
+    public Sprite healthIcon, rangeIcon, turnoffIcon, chasingIcon;
+    private bool using_chasingItem = false;
 
     [Header("점령 데이터")]
     public bool isInCaptureZone = false;
@@ -168,12 +169,14 @@ public class PlayerController : MonoBehaviour
                 }
                 else
                 {
-                    // M키 입력 감지
-                    if (Input.GetKeyDown(chaserModeKey))
+                    if (using_chasingItem)
                     {
-                        ToggleChaserMode();
+                        // M키 입력 감지
+                        if (Input.GetKeyDown(chaserModeKey))
+                        {
+                            ToggleChaserMode();
+                        }
                     }
-
                     HandleActiveTurnInput();
                 }
                 break;
@@ -222,6 +225,7 @@ public class PlayerController : MonoBehaviour
     public void StartTurn()
     {
         playerMovement.ResetSpeed();
+        using_chasingItem = false;
         selectedProjectile = null;
         isNextShotChaser = false;
 
@@ -456,7 +460,7 @@ public class PlayerController : MonoBehaviour
         switch (item)
         {
             case ItemType.Health:
-                playerMovement.maxStamina *= 2;
+                playerMovement.speedMultiplier *= 1.5f;
                 break;
 
             case ItemType.Range:
@@ -465,6 +469,9 @@ public class PlayerController : MonoBehaviour
 
             case ItemType.TurnOff:
                 nextPlayer.trajectory.isPainted = false;
+                break;
+            case ItemType.Chasing:
+                using_chasingItem = true;
                 break;
         }
     }
@@ -499,6 +506,7 @@ public class PlayerController : MonoBehaviour
             case ItemType.Health: return healthIcon;
             case ItemType.Range: return rangeIcon;
             case ItemType.TurnOff: return turnoffIcon;
+            case ItemType.Chasing: return chasingIcon;
             default: return null;
         }
     }

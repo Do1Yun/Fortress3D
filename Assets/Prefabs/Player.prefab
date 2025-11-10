@@ -561,6 +561,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 298d3c65fb23d90438a0e280bb35a168, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentState: 0
   playerID: 0
   rerollChances: 3
   staminaImage: {fileID: 0}
@@ -575,6 +576,11 @@ MonoBehaviour:
   - {fileID: 0}
   rerollCountText: {fileID: 0}
   itemSlotImages: []
+  allManagedTweeners: []
+  uiStateSettings: []
+  uiAudioSource: {fileID: 0}
+  uiSlideInSound: {fileID: 0}
+  uiSlideOutSound: {fileID: 0}
   stageTimeLimit: 5
   projectileDatabase:
   - type: 0
@@ -597,10 +603,13 @@ MonoBehaviour:
   healthIcon: {fileID: 21300000, guid: 58deb80820034564ca7506a4d520f595, type: 3}
   rangeIcon: {fileID: 21300000, guid: 9149cb64421bf584abe651480212fe41, type: 3}
   turnoffIcon: {fileID: 21300000, guid: 9779f91ec939ceb4cb9f623a898381d7, type: 3}
+  chasingIcon: {fileID: 21300000, guid: 41dd2b18052f19243b707edbabfe7cf2, type: 3}
   isInCaptureZone: 0
   MakingGroundTime: 10
   isMakingGround: 0
   mainCamera: {fileID: 0}
+  chaserModeKey: 109
+  isNextShotChaser: 0
 --- !u!114 &977182312925777150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -619,6 +628,7 @@ MonoBehaviour:
   gravityValue: -9.81
   deceleration: 10
   wallClimbSpeed: 5
+  speedMultiplier: 1
   slopeAdaptSpeed: 10
   slopeRaycastLength: 1.5
   forwardRaycastLength: 1.5
@@ -628,6 +638,10 @@ MonoBehaviour:
   maxStamina: 100
   staminaDrainRate: 20
   currentStamina: 0
+  respawnPoint: {fileID: 0}
+  respawnTrigger: {fileID: 0}
+  respawnLift: 0.08
+  copyRespawnRotation: 0
 --- !u!114 &6137875063882667236
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -663,6 +677,7 @@ MonoBehaviour:
   minLaunchPower: 10
   maxLaunchPower: 50
   powerGaugeSpeed: 30
+  chaserDeployerPrefab: {fileID: 0}
   currentLaunchPower: 0
 --- !u!114 &2237231741892270619
 MonoBehaviour:

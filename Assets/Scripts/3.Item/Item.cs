@@ -8,7 +8,8 @@ public enum ItemType
 {
     Health,
     Range,
-    TurnOff
+    TurnOff,
+    Chasing
 }
 
 [RequireComponent(typeof(CharacterController))]
