@@ -94,6 +94,7 @@ public class ChasingObject : MonoBehaviour
 
     void Update()
     {
+        explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
         if (!isActivated || hasExploded) return;
 
         FindClosestPlayer();

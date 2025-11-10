@@ -67,6 +67,10 @@ public class PlayerController : MonoBehaviour
     private GameManager gameManager;
     public Sprite healthIcon, rangeIcon, turnoffIcon, chasingIcon;
     private bool using_chasingItem = false;
+    //public bool test_speed = false;
+    //public bool test_double = false;
+    //public bool test_chasing = false;
+    //public bool test_leesin = false;
 
     [Header("점령 데이터")]
     public bool isInCaptureZone = false;
@@ -115,6 +119,7 @@ public class PlayerController : MonoBehaviour
             mainCamera = Camera.main;
         }
         UpdateItemSelectionUI();
+        // testItem();
     }
 
     void Update()
@@ -171,11 +176,8 @@ public class PlayerController : MonoBehaviour
                 {
                     if (using_chasingItem)
                     {
-                        // M키 입력 감지
-                        if (Input.GetKeyDown(chaserModeKey))
-                        {
-                            ToggleChaserMode();
-                        }
+                        isNextShotChaser = true;
+                        ToggleChaserMode();
                     }
                     HandleActiveTurnInput();
                 }
@@ -222,6 +224,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // 턴 시작 시 호출되는 함수
+
     public void StartTurn()
     {
         playerMovement.ResetStamina();
@@ -465,7 +468,7 @@ public class PlayerController : MonoBehaviour
                 break;
 
             case ItemType.Range:
-                Player.ExplosionRange *= 2;
+                Player.ExplosionRange *= 1.5f;
                 break;
 
             case ItemType.TurnOff:
@@ -476,6 +479,30 @@ public class PlayerController : MonoBehaviour
                 break;
         }
     }
+
+    //public void testItem()
+    //{
+    //    PlayerMovement playerMovement = gameManager.players_movement[playerID];
+    //    PlayerController Player = gameManager.players[playerID];
+    //    PlayerController nextPlayer = gameManager.players[(playerID + 1) % 2];
+    //    if (test_speed)
+    //    {
+    //        playerMovement.speedMultiplier = 1.5f;
+    //    }
+    //    if (test_chasing)
+    //    {
+    //        using_chasingItem = true;
+    //    }
+    //    if (test_double)
+    //    {
+    //        Player.ExplosionRange = 50;
+    //    }
+    //    if (test_leesin)
+    //    {
+    //        nextPlayer.trajectory.isPainted = false;
+    //    }
+
+    //}
 
     // 아이템 슬롯 UI 업데이트
     public void UpdateItemSelectionUI()
@@ -557,8 +584,6 @@ public class PlayerController : MonoBehaviour
 
     public void ToggleChaserMode()
     {
-        isNextShotChaser = !isNextShotChaser;
-        Debug.Log("추적자 모드 변경: " + (isNextShotChaser ? "ON" : "OFF"));
         if (statusText != null)
         {
             // ▼▼▼ [수정] 추적자 모드일 때 상태 텍스트 변경 ▼▼▼

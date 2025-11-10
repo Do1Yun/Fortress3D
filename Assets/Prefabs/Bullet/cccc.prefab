@@ -79,7 +79,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   raycastHeightOffset: 0.5
-  explosionRadius: 7
+  explosionRadius: 5
   explosionEffectPrefab: {fileID: 0}
   terrainModificationStrength: 1
   explosionForce: 500

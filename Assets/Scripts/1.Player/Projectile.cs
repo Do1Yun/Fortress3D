@@ -61,6 +61,7 @@ public class Projectile : MonoBehaviour
 
         // 포탄이 생성되고 lifeTime초 후에 자동으로 Explode 함수를 호출합니다.
         Invoke("Explode", lifeTime);
+        explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
     }
 
     // isTrigger가 아닌 Collider와 충돌했을 때 호출됩니다.
