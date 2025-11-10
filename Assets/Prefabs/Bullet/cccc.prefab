@@ -80,12 +80,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   raycastHeightOffset: 0.5
-  explosionRadius: 5
+  explosionRadius: 7
   explosionEffectPrefab: {fileID: 0}
   terrainModificationStrength: 1
   explosionForce: 500
   playerKnockbackForce: 20
-  terrainEffectDuration: 1
+  terrainEffectDuration: 0.5
   terrainEffectSteps: 10
 --- !u!23 &9216845830942869285
 MeshRenderer:
