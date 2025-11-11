@@ -107,7 +107,10 @@ public class ChaserDeployerProjectile : MonoBehaviour
         if (chaserUnitPrefab != null)
         {
             GameObject chaserGO = Instantiate(chaserUnitPrefab, spawnPosition, Quaternion.identity);
-
+            if (ProjectileFollowCamera.instance != null)
+            {
+                ProjectileFollowCamera.instance.SetTarget(chaserGO.transform);
+            }
             ChasingObject chaserScript = chaserGO.GetComponent<ChasingObject>();
             if (chaserScript != null)
             {

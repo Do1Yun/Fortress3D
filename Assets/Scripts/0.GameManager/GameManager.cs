@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     [Header("메인카메라 지정")]
     public CameraController mainCameraController;
     public GameObject MGCamera;
+    public ProjectileFollowCamera projectileCam;
 
     [Header("UI 연결")]
     public TextMeshProUGUI turnDisplayText;
@@ -234,14 +235,26 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    public void OnProjectileFired()
+    public void OnProjectileFired(Transform projectileTransform) 
     {
         SetGameState(GameState.ProjectileFlying);
+
+        if (projectileCam != null)
+        {
+            projectileCam.SetTarget(projectileTransform);
+        }
     }
 
     public void OnProjectileDestroyed()
     {
         if (currentState != GameState.ProjectileFlying) return;
+
+        // [수정] 추적 카메라가 존재하면 "1초 뒤에" 비활성화하도록 명령합니다.
+        if (projectileCam != null)
+        {
+            projectileCam.StartDeactivationDelay(1.0f); // <--- 이렇게 바뀝니다!
+        }
+
         SwitchToNextTurn();
     }
 

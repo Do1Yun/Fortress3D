@@ -85,7 +85,6 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // ▼▼▼ [수정됨] Fire 함수 전체 ▼▼▼
     public void Fire()
     {
         bool isChaser = false;
@@ -158,7 +157,7 @@ public class PlayerShooting : MonoBehaviour
         if (GameManager.instance != null)
         {
             // (이전의 버그 수정 코드는 이미 여기에 반영되어 있습니다)
-            GameManager.instance.OnProjectileFired();
+            GameManager.instance.OnProjectileFired(projectileGO.transform);
         }
     }
     // ▲▲▲ [여기까지 수정] ▲▲▲
