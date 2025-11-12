@@ -541,17 +541,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 575202156}
   m_CullTransparentMesh: 1
---- !u!114 &608855846 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8533217517223773018, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
-  m_PrefabInstance: {fileID: 450208835}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &614954729
 GameObject:
   m_ObjectHideFlags: 0
@@ -1457,17 +1446,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &943918789 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6767195966488155176, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
-  m_PrefabInstance: {fileID: 450208835}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &974463683
 GameObject:
   m_ObjectHideFlags: 0
@@ -1675,17 +1653,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1167080399}
   m_CullTransparentMesh: 1
---- !u!114 &1253462649 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7840652197711172255, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
-  m_PrefabInstance: {fileID: 450208835}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1473381727 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8019599327012498591, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
@@ -1695,17 +1662,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1501668272 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8519446939826296074, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
-  m_PrefabInstance: {fileID: 450208835}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1532383872
@@ -2139,6 +2095,7 @@ MonoBehaviour:
   minWindStrength: 1
   maxWindStrength: 15
   verticalWindFactor: 1
+  gameManager: {fileID: 0}
 --- !u!4 &1775467467
 Transform:
   m_ObjectHideFlags: 0
@@ -2499,17 +2456,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &2039778125 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4219947436748612698, guid: 2cec8402281e5a6418af6904abea23d9, type: 3}
-  m_PrefabInstance: {fileID: 450208835}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &2143272608
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2524,7 +2470,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: powerText
       value: 
-      objectReference: {fileID: 1253462649}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: rangeIcon
       value: 
@@ -2532,7 +2478,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: timerText
       value: 
-      objectReference: {fileID: 1501668272}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: healthIcon
       value: 
@@ -2540,7 +2486,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: powerImage
       value: 
-      objectReference: {fileID: 943918789}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: statusText
       value: 
@@ -2548,7 +2494,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: timerImage
       value: 
-      objectReference: {fileID: 2039778125}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: turnoffIcon
       value: 
@@ -2556,7 +2502,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: staminaImage
       value: 
-      objectReference: {fileID: 608855846}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: rerollCountText
       value: 
@@ -2689,7 +2635,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: powerText
       value: 
-      objectReference: {fileID: 1253462649}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: rangeIcon
       value: 
@@ -2697,7 +2643,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: timerText
       value: 
-      objectReference: {fileID: 1501668272}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: healthIcon
       value: 
@@ -2705,7 +2651,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: powerImage
       value: 
-      objectReference: {fileID: 943918789}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: statusText
       value: 
@@ -2713,7 +2659,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: timerImage
       value: 
-      objectReference: {fileID: 2039778125}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: turnoffIcon
       value: 
@@ -2721,7 +2667,7 @@ PrefabInstance:
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: staminaImage
       value: 
-      objectReference: {fileID: 608855846}
+      objectReference: {fileID: 0}
     - target: {fileID: 75167660805384026, guid: dc6c4e68484976f4583ca144072b1904, type: 3}
       propertyPath: rerollCountText
       value: 

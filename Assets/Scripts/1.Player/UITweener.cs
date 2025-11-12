@@ -34,6 +34,10 @@ public class UITweener : MonoBehaviour
     // 화면 크기나 방향이 변경될 때를 대비해 숨겨질 위치를 다시 계산합니다.
     private void OnRectTransformDimensionsChange()
     {
+        if (rectTransform == null)
+        {
+            rectTransform = GetComponent<RectTransform>();
+        }
         // 보이는 위치가 바뀌었을 수 있으므로 다시 할당합니다.
         shownPosition = rectTransform.anchoredPosition;
         CalculateHiddenPosition();
@@ -42,6 +46,10 @@ public class UITweener : MonoBehaviour
     // ▼▼▼ [수정] 숨겨지는 위치 계산 로직 개선 ▼▼▼
     private void CalculateHiddenPosition()
     {
+        if (rectTransform == null)
+        {
+            rectTransform = GetComponent<RectTransform>();
+        }
         // 부모 RectTransform의 사각형 정보와 자신의 크기를 가져옵니다.
         Rect parentRect = ((RectTransform)rectTransform.parent).rect;
         Vector2 selfSize = rectTransform.rect.size;

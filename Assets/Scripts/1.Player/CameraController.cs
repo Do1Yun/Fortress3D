@@ -1,8 +1,12 @@
+// Scripts.zip/1.Player/CameraController.cs
+
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
     private Transform target;
+    private Transform turretToFollow;
+    private PlayerController playerController; // ▼▼▼ [1. PlayerController 변수 추가] ▼▼▼
 
     [Header("카메라 기본 설정")]
     public CameraModeSettings defaultSettings = new CameraModeSettings { distance = 7.0f, yaw = 0.0f, pitch = 20.0f, lookAtOffset = new Vector3(0, 1.5f, 0) };
@@ -50,7 +54,22 @@ public class CameraController : MonoBehaviour
         }
         else // 기본 위치로 복귀
         {
-            float desiredYaw = target.eulerAngles.y + currentSettings.yaw;
+            // ▼▼▼ [3. 핵심 수정] ▼▼▼
+
+            // 1. 기본값은 'target' (플레이어 본체)을 따라갑니다.
+            Transform horizontalTarget = target;
+
+            // 2. '이동' 상태가 아닐 때만 포탑을 따라가도록 조건을 추가합니다.
+            if (turretToFollow != null && playerController != null &&
+                playerController.currentState != PlayerController.PlayerState.Moving)
+            {
+                // '이동' 상태가 아니면 'turretToFollow' (포탑)을 따라갑니다.
+                horizontalTarget = turretToFollow;
+            }
+
+            float desiredYaw = horizontalTarget.eulerAngles.y + currentSettings.yaw;
+            // ▲▲▲ [수정 완료] ▲▲▲
+
             currentX = Mathf.LerpAngle(currentX, desiredYaw, rotationDamping * Time.deltaTime);
             currentY = Mathf.LerpAngle(currentY, currentSettings.pitch, rotationDamping * Time.deltaTime);
         }
@@ -79,16 +98,37 @@ public class CameraController : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationDamping * Time.deltaTime);
     }
 
+    // ▼▼▼ [2. 수정된 함수] ▼▼▼
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+        turretToFollow = null;
+        playerController = null; // 타겟 변경 시 초기화
+
         if (target != null)
         {
-            currentX = target.eulerAngles.y + defaultSettings.yaw;
+            // 타겟(PlayerController가 있는 오브젝트)에서 PlayerController 컴포넌트를 찾습니다.
+            playerController = target.GetComponent<PlayerController>();
+
+            // 타겟에서 PlayerAiming 컴포넌트를 찾습니다.
+            PlayerAiming aimingComponent = target.GetComponent<PlayerAiming>();
+            if (aimingComponent != null)
+            {
+                // PlayerAiming이 있다면, 그 컴포넌트의 turretPivot을 따라갈 대상으로 저장합니다.
+                turretToFollow = aimingComponent.turretPivot;
+            }
+
+            // 카메라의 초기 X축 회전값을 설정합니다.
+            // (참고: SetTarget 시점에는 아직 'Moving' 상태가 아닐 수 있으므로, 
+            //  본체 기준으로 초기화하는 것이 더 안정적일 수 있습니다.)
+            float initialYaw = target.eulerAngles.y;
+
+            currentX = initialYaw + defaultSettings.yaw;
             currentY = defaultSettings.pitch;
             lookAtPivot = defaultSettings.lookAtOffset;
         }
     }
+    // ▲▲▲ [수정 완료] ▲▲▲
 
     static float ClampAngle(float angle, float min, float max)
     {
