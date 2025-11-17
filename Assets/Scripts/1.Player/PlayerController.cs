@@ -67,6 +67,7 @@ public class PlayerController : MonoBehaviour
     private GameManager gameManager;
     public Sprite healthIcon, rangeIcon, turnoffIcon, chasingIcon;
     private bool using_chasingItem = false;
+    public GameObject EffectPrefab;
     //public bool test_speed = false;
     //public bool test_double = false;
     //public bool test_chasing = false;
@@ -106,6 +107,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        EffectPrefab.SetActive(false);
         playerMovement.SetUIReferences(staminaImage);
         playerShooting.SetUIReferences(powerImage, powerText);
 
@@ -124,6 +126,10 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (playerMovement.speedMultiplier > 1f)
+        {
+            EffectPrefab.SetActive(true);
+        }
         switch (currentState)
         {
             case PlayerState.Waiting:

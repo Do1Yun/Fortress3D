@@ -1,5 +1,4 @@
-// Projectile.cs
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public enum ProjectileType
 {
@@ -12,18 +11,17 @@ public enum ProjectileType
 
 public class Projectile : MonoBehaviour
 {
-
-    [Header("Æ÷Åº °øÅë ¼³Á¤")]
+    [Header("í¬íƒ„ ê³µí†µ ì„¤ì •")]
     public ProjectileType type;
     public float lifeTime = 5.0f;
     public float explosionRadius;
     public GameObject explosionEffectPrefab;
-    private float rotationSmoothSpeed = 10f; // <-- Æ÷Åº ¸Ó¸® ¹æÇâ º¸°£ ¼Óµµ
+    private float rotationSmoothSpeed = 10f;
 
-    [Header("Å¸ÀÔº° ¼³Á¤")]
+    [Header("íƒ€ì…ë³„ ì„¤ì •")]
     public float terrainModificationStrength = 2.0f;
     public float explosionForce = 500f;
-    public float playerKnockbackForce = 20f; // <-- ÇÃ·¹ÀÌ¾î ³Ë¹é Àü¿ë º¯¼ö Ãß°¡! (±âº»°ª 20)
+    public float playerKnockbackForce = 20f;
 
     private bool hasExploded = false;
     private Rigidbody rb;
@@ -34,50 +32,49 @@ public class Projectile : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    // FixedUpdate´Â ¹°¸® È¿°ú¸¦ Àû¿ëÇÏ±â¿¡ °¡Àå ÁÁÀº °÷ÀÔ´Ï´Ù.
     void FixedUpdate()
     {
-        // WindController°¡ Á¸ÀçÇÏ°í, ÀÌ ¿ÀºêÁ§Æ®ÀÇ ÅÂ±×°¡ "Bullet"ÀÏ ¶§¸¸ ÈûÀ» Àû¿ëÇÕ´Ï´Ù.
+        // ë°”ëŒ ì˜í–¥
         if (WindController.instance != null && gameObject.CompareTag("Bullet"))
         {
-            Vector3 windForce = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
+            Vector3 windForce = WindController.instance.CurrentWindDirection *
+                                WindController.instance.CurrentWindStrength;
             rb.AddForce(windForce, ForceMode.Force);
         }
-        // ¡å¡å¡å¡å¡å¡å¡å¡å¡å¡å¡å¡å Æ÷Åº ¸Ó¸®¹æÇâ ¼³Á¤
+
+        // í¬íƒ„ì˜ ë¨¸ë¦¬ ë°©í–¥
         if (rb != null && rb.velocity.sqrMagnitude > 0.01f)
         {
-            // ¸ñÇ¥ È¸Àü°ª = ÇöÀç ¼Óµµ ¹æÇâ
             Quaternion targetRotation = Quaternion.LookRotation(rb.velocity.normalized);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation * Quaternion.Euler(90f, 0f, 0f), Time.deltaTime * rotationSmoothSpeed);
+            transform.rotation = Quaternion.Lerp(
+                transform.rotation,
+                targetRotation * Quaternion.Euler(90f, 0f, 0f),
+                Time.deltaTime * rotationSmoothSpeed
+            );
         }
-        // ¡ã¡ã¡ã¡ã¡ã¡ã¡ã¡ã¡ã¡ã¡ã¡ã
     }
+
     void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
 
         if (gameManager == null)
-            Debug.LogError("GameManager¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+            Debug.LogError("GameManagerë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
 
-        // Æ÷ÅºÀÌ »ı¼ºµÇ°í lifeTimeÃÊ ÈÄ¿¡ ÀÚµ¿À¸·Î Explode ÇÔ¼ö¸¦ È£ÃâÇÕ´Ï´Ù.
         Invoke("Explode", lifeTime);
         explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
     }
 
-    // isTrigger°¡ ¾Æ´Ñ Collider¿Í Ãæµ¹ÇßÀ» ¶§ È£ÃâµË´Ï´Ù.
     void OnCollisionEnter(Collision collision)
     {
-        // ÀÌ¹Ì Æø¹ßÇß´Ù¸é ¾Æ¹«°Íµµ ÇÏÁö ¾Ê½À´Ï´Ù.
         if (collision.gameObject.CompareTag("Bullet") || hasExploded) return;
 
-        // Áï½Ã Æø¹ßÇÏ°í, ÀÌº¥Æ®¸¦ ÀüÆÄÇÑ ÈÄ, ¿ÀºêÁ§Æ®¸¦ ÆÄ±«ÇÕ´Ï´Ù.
         Explode(collision.contacts[0].point);
     }
 
-    // [¼öÁ¤] Invoke È£ÃâÀ» À§ÇØ ¸Å°³º¯¼ö°¡ ¾ø´Â Explode ÇÔ¼ö¸¦ Ãß°¡Çß½À´Ï´Ù.
     private void Explode()
     {
-        Explode(this.transform.position); // ÇöÀç À§Ä¡¸¦ Æø¹ß ÁöÁ¡À¸·Î »ç¿ë
+        Explode(this.transform.position);
     }
 
     private void Explode(Vector3 explosionPosition)
@@ -85,19 +82,31 @@ public class Projectile : MonoBehaviour
         if (hasExploded) return;
         hasExploded = true;
 
-        Debug.LogFormat("'{0}' Æ÷Åº Æø¹ß! À§Ä¡: {1}", type, explosionPosition);
+        Debug.LogFormat("'{0}' í¬íƒ„ í­ë°œ! ìœ„ì¹˜: {1}", type, explosionPosition);
 
+        // ---------------------------------------------
+        // ğŸ”¥ ìˆ˜ì • í•µì‹¬: í­ë°œ ì´í™íŠ¸ í•œ ë²ˆë§Œ ìƒì„± í›„ ìë™ ì‚­ì œ
+        // ---------------------------------------------
         if (explosionEffectPrefab != null)
         {
-            Instantiate(explosionEffectPrefab, explosionPosition, Quaternion.identity);
+            GameObject effect = Instantiate(
+                explosionEffectPrefab,
+                explosionPosition,
+                Quaternion.identity
+            );
+
+            // íŒŒí‹°í´ ê¸¸ì´ë¥¼ ëª¨ë¥´ë‹ˆ 3ì´ˆ ê¸°ë³¸ ì‚­ì œ (ì›í•˜ë©´ ì¡°ì ˆ)
+            Destroy(effect, 1f);
         }
 
+        // ---------------------------------------------
+        // í­ë°œ ë°˜ê²½ ë‚´ ì˜¤ë¸Œì íŠ¸ íƒìƒ‰
+        // ---------------------------------------------
         Collider[] colliders = Physics.OverlapSphere(explosionPosition, explosionRadius);
 
         switch (type)
         {
             case ProjectileType.NormalImpact:
-                // (±âÁ¸°ú µ¿ÀÏ)
                 foreach (Collider hit in colliders)
                 {
                     Rigidbody rb = hit.GetComponentInParent<Rigidbody>();
@@ -109,58 +118,57 @@ public class Projectile : MonoBehaviour
                 break;
 
             case ProjectileType.TerrainDestruction:
-                // (±âÁ¸°ú µ¿ÀÏ)
                 if (World.Instance != null)
                 {
-                    World.Instance.ModifyTerrain(explosionPosition, -terrainModificationStrength, explosionRadius);
+                    World.Instance.ModifyTerrain(
+                        explosionPosition,
+                        -terrainModificationStrength,
+                        explosionRadius
+                    );
                 }
                 break;
 
             case ProjectileType.TerrainCreation:
-                // (±âÁ¸°ú µ¿ÀÏ)
                 if (World.Instance != null)
                 {
-                    World.Instance.ModifyTerrain(explosionPosition, terrainModificationStrength, explosionRadius);
+                    World.Instance.ModifyTerrain(
+                        explosionPosition,
+                        terrainModificationStrength,
+                        explosionRadius
+                    );
                 }
                 break;
 
-            // ¡å¡å¡å [¼öÁ¤µÈ ºÎºĞ] ¡å¡å¡å
             case ProjectileType.TerrainPush:
-                // 1. ÁöÇü ÆÄ±« ·ÎÁ÷ Á¦°Å!
-                // 2. ÁÖº¯ ÇÃ·¹ÀÌ¾î ¹Ğ¾î³»±â
                 foreach (Collider hit in colliders)
                 {
                     PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
                     if (player != null)
                     {
                         Vector3 direction = player.transform.position - explosionPosition;
-                        // »õ·Î ¸¸µç playerKnockbackForce º¯¼ö »ç¿ë
                         player.ApplyKnockback(direction, playerKnockbackForce);
                     }
                 }
                 break;
 
             case ProjectileType.TerrainPull:
-                // 1. ÁöÇü »ı¼º ·ÎÁ÷ Á¦°Å!
-                // 2. ÁÖº¯ ÇÃ·¹ÀÌ¾î ²ø¾î´ç±â±â
                 foreach (Collider hit in colliders)
                 {
                     PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
                     if (player != null)
                     {
                         Vector3 direction = explosionPosition - player.transform.position;
-                        // »õ·Î ¸¸µç playerKnockbackForce º¯¼ö »ç¿ë
                         player.ApplyKnockback(direction, playerKnockbackForce);
                     }
                 }
                 break;
-                // ¡ã¡ã¡ã [¿©±â±îÁö ¼öÁ¤] ¡ã¡ã¡ã
         }
 
         if (GameManager.instance != null)
         {
             GameManager.instance.OnProjectileDestroyed();
         }
+
         Destroy(gameObject);
     }
 }
