@@ -286,6 +286,7 @@ public class GameManager : MonoBehaviour
     {
         players[currentPlayerIndex].trajectory.isPainted = true;
         players[currentPlayerIndex].ExplosionRange = players[currentPlayerIndex].BasicExplosionRange;
+        players_movement[currentPlayerIndex].ResetSpeed();
     }
 
     public bool isMGTime()

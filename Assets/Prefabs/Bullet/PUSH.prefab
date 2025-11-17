@@ -130,7 +130,7 @@ MonoBehaviour:
   type: 3
   lifeTime: 5
   explosionRadius: 5
-  explosionEffectPrefab: {fileID: 0}
+  explosionEffectPrefab: {fileID: 1714681308540598, guid: 5cbc537826220e04592d5a41a0dd985f, type: 3}
   terrainModificationStrength: 1
   explosionForce: 500
   playerKnockbackForce: 20

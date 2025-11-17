@@ -97,6 +97,8 @@ public class ChasingObject : MonoBehaviour
         explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
         if (!isActivated || hasExploded) return;
 
+        explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+
         FindClosestPlayer();
         if (currentTarget == null) return;
 
@@ -235,9 +237,17 @@ public class ChasingObject : MonoBehaviour
         if (controller.enabled)
             controller.enabled = false;
 
+
         if (explosionEffectPrefab != null)
         {
-            Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
+            GameObject effect = Instantiate(
+                explosionEffectPrefab,
+                this.transform.position,
+                Quaternion.identity
+            );
+
+            // 파티클 길이를 모르니 3초 기본 삭제 (원하면 조절)
+            Destroy(effect, 1f);
         }
 
         if (explosionType == ProjectileType.TerrainDestruction || explosionType == ProjectileType.TerrainCreation)
