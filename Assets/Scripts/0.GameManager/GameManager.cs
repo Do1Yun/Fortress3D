@@ -23,10 +23,13 @@ public class GameManager : MonoBehaviour
     [Header("UI 연결")]
     public TextMeshProUGUI turnDisplayText;
 
-    [Header("플레이어 수 지정")]
+    [Header("플레이어 수,스코어")]
     public int minPlayersForGame = 2;
     public int score_player1 = 0, score_player2 = 0;
+    public int WinningScore = 3;
     public int playerInCaptureZone = 0;
+
+    private bool TurnFlag = false;
 
     public enum GameState
     {
@@ -159,13 +162,25 @@ public class GameManager : MonoBehaviour
         }
 
         // 점령시 점수 획득
-        if (players[0].isInCaptureZone && !players[1].isInCaptureZone)
+        if (TurnFlag)
         {
-            score_player1 += 1;
+            if (players[0].isInCaptureZone && !players[1].isInCaptureZone)
+            {
+                score_player1 += 1;
+            }
         }
-        else if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
+        else
         {
-            score_player2 += 1;
+             if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
+            {
+                score_player2 += 1;
+            }
+        }
+
+        if ((score_player1 >= WinningScore) || (score_player2 >= WinningScore))
+        {
+            Debug.Log("Hello");
+            SceneManager.LoadScene("GameoverScene");
         }
 
         Item_Reset(); // 아이템 영향 초기화
@@ -184,6 +199,8 @@ public class GameManager : MonoBehaviour
         {
             StartCoroutine(StartNextTurnWithDelay(1.0f));
         }
+
+        TurnFlag = !TurnFlag;
     }
 
     IEnumerator StartNextTurnWithDelay(float delay)
@@ -249,10 +266,9 @@ public class GameManager : MonoBehaviour
     {
         if (currentState != GameState.ProjectileFlying) return;
 
-        // [수정] 추적 카메라가 존재하면 "1초 뒤에" 비활성화하도록 명령합니다.
         if (projectileCam != null)
         {
-            projectileCam.StartDeactivationDelay(1.0f); // <--- 이렇게 바뀝니다!
+            projectileCam.StartDeactivationDelay(1.0f);
         }
 
         SwitchToNextTurn();
@@ -266,7 +282,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void Item_Reset() // 턴이 넘어가면 아이템 영향 초기화
+    void Item_Reset()
     {
         players[currentPlayerIndex].trajectory.isPainted = true;
         players[currentPlayerIndex].ExplosionRange = players[currentPlayerIndex].BasicExplosionRange;
