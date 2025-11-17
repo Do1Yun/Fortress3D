@@ -13,6 +13,11 @@ public class CaptureZone : MonoBehaviour
     //private float currentCaptureProgress = 0f;
     //    private bool isCaptured = false;
 
+    // 수정
+    public GameObject neutralObject;
+    public GameObject greenObject;
+    public GameObject redObject;
+    // 수정
     private List<PlayerController> players;
 
     void Start()
@@ -38,12 +43,21 @@ public class CaptureZone : MonoBehaviour
         switch (gameManager.playerInCaptureZone)
         {
             case 0:
-                ChangeLightColor(Color.green);
+                neutralObject.SetActive(true);
+                greenObject.SetActive(false);
+                redObject.SetActive(false);
+                ChangeLightColor(Color.white);
                 break;
             case 1:
-                ChangeLightColor(Color.blue);
+                neutralObject.SetActive(false);
+                greenObject.SetActive(true);
+                redObject.SetActive(false);
+                ChangeLightColor(Color.green);
                 break;
             case 2:
+                neutralObject.SetActive(false);
+                greenObject.SetActive(false);
+                redObject.SetActive(true);
                 ChangeLightColor(Color.red);
                 break;
             default:
