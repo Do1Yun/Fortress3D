@@ -32,7 +32,9 @@ public class ChasingObject : MonoBehaviour
     [Header("폭발 설정")]
     [Tooltip("기본 폭발 반지름. PlayerController의 아이템 효과에 의해 덮어쓰일 수 있습니다.")]
     public float explosionRadius = 5.0f;
-    public GameObject explosionEffectPrefab;
+    private GameObject explosionEffectPrefab;
+    public GameObject explosionEffectPrefab1;
+    public GameObject explosionEffectPrefab2;
     public float terrainModificationStrength = 2.0f;
     public float explosionForce = 500f;
     public float playerKnockbackForce = 20f;
@@ -64,7 +66,7 @@ public class ChasingObject : MonoBehaviour
         {
             Debug.LogError("ChasingObject가 GameManager에서 플레이어를 찾을 수 없습니다!", this);
             isActivated = false;
-        }
+        }        
     }
 
     /// <summary>
@@ -75,6 +77,12 @@ public class ChasingObject : MonoBehaviour
         this.explosionType = type;
         this.isActivated = true;
         this.explosionRadius = newRadius;
+
+        // 수정 - 1119 by lee
+        explosionEffectPrefab = (type == ProjectileType.TerrainPull || type == ProjectileType.TerrainPush) ? explosionEffectPrefab1 : explosionEffectPrefab2;
+        explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
+        explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+        // 수정 - 1119 by lee
 
         float stopDist = (type == ProjectileType.TerrainPull) ? explosionRadius : detonationDistance;
         Debug.Log($"[CHASER_DEBUG] 추적자 활성화! 임무: {type}. 정지 거리: {stopDist}m (Radius: {this.explosionRadius}m / Detonation: {detonationDistance}m)");
@@ -96,8 +104,6 @@ public class ChasingObject : MonoBehaviour
     {
         explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
         if (!isActivated || hasExploded) return;
-
-        explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
 
         FindClosestPlayer();
         if (currentTarget == null) return;
@@ -248,6 +254,9 @@ public class ChasingObject : MonoBehaviour
 
             // 파티클 길이를 모르니 3초 기본 삭제 (원하면 조절)
             Destroy(effect, 1f);
+            // 수정 - 1119 by lee
+            explosionEffectPrefab.transform.localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+            // 수정 - 1119 by lee
         }
 
         if (explosionType == ProjectileType.TerrainDestruction || explosionType == ProjectileType.TerrainCreation)

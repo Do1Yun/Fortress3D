@@ -63,6 +63,7 @@ public class Projectile : MonoBehaviour
 
         Invoke("Explode", lifeTime);
         explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
+        explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
     }
 
     void OnCollisionEnter(Collision collision)
@@ -85,7 +86,7 @@ public class Projectile : MonoBehaviour
         Debug.LogFormat("'{0}' 포탄 폭발! 위치: {1}", type, explosionPosition);
 
         // ---------------------------------------------
-        // 🔥 수정 핵심: 폭발 이펙트 한 번만 생성 후 자동 삭제
+        // 폭발 이펙트 한 번만 생성 후 자동 삭제
         // ---------------------------------------------
         if (explosionEffectPrefab != null)
         {
@@ -93,10 +94,10 @@ public class Projectile : MonoBehaviour
                 explosionEffectPrefab,
                 explosionPosition,
                 Quaternion.identity
-            );
-
+            );            
             // 파티클 길이를 모르니 3초 기본 삭제 (원하면 조절)
             Destroy(effect, 1f);
+            explosionEffectPrefab.transform.localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
         }
 
         // ---------------------------------------------
