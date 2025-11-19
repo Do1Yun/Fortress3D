@@ -2,8 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 이 스크립트가 부착된 게임 오브젝트에 CharacterController 컴포넌트가 자동으로 추가됩니다.
-
 public enum ItemType
 {
     Health,
@@ -12,19 +10,18 @@ public enum ItemType
     Chasing
 }
 
-[RequireComponent(typeof(CharacterController))]
+// CharacterController 대신 Rigidbody를 필수 컴포넌트로 지정합니다.
+[RequireComponent(typeof(Rigidbody))]
 public class Item : MonoBehaviour
 {
     public ItemType itemtype;
     public Sprite itemIcon;
 
-    // 중력 값을 설정합니다.
-    public float gravityValue = -9.81f;
+    // Rigidbody가 중력을 처리하므로 gravityValue와 itemVelocity 변수는 필요 없습니다.
 
     private GameManager gameManager;
-    private CharacterController characterController;
+    private Rigidbody rb;
     private MeshRenderer meshRenderer;
-    private Vector3 itemVelocity;
 
     private void Start()
     {
@@ -37,29 +34,22 @@ public class Item : MonoBehaviour
     void Awake()
     {
         meshRenderer = GetComponent<MeshRenderer>();
-        characterController = GetComponent<CharacterController>();
+
+        // Rigidbody 컴포넌트 가져오기
+        rb = GetComponent<Rigidbody>();
 
         itemtype = (ItemType)Random.Range(0, System.Enum.GetValues(typeof(ItemType)).Length);
-        //switch (itemtype)
-        //{
-        //    case ItemType.Health: meshRenderer.material.color = Color.red; break;
-        //    case ItemType.Range: meshRenderer.material.color = Color.green; break;
-        //    case ItemType.TurnOff: meshRenderer.material.color = Color.blue; break;
-        //}
-        // 같은 상자 모양으로 만들기 위해 색깔 코드 주석처리
+
+        // 스크립트 시작 시 물리 설정 (Inspector에서 설정해도 되지만 안전을 위해 코드 추가)
+        rb.useGravity = true; // 중력 켜기
+        // 아이템이 땅에 떨어졌을 때 데굴데굴 굴러가거나 넘어지지 않게 하려면 아래 주석을 해제하세요.
+        // rb.constraints = RigidbodyConstraints.FreezeRotation; 
     }
 
     void Update()
     {
-        // 중력 적용
-        if (characterController.isGrounded && itemVelocity.y < 0)
-        {
-            itemVelocity.y = -2f;
-        }
-        itemVelocity.y += gravityValue * Time.deltaTime;
-
-        // 최종 이동 적용
-        characterController.Move(itemVelocity * Time.deltaTime);
+        // Rigidbody를 사용하면 물리 엔진이 자동으로 중력과 충돌을 계산하므로
+        // 여기서 이동 관련 코드를 작성할 필요가 없습니다.
     }
 
     private void OnTriggerEnter(Collider other)
@@ -68,39 +58,39 @@ public class Item : MonoBehaviour
         {
             PlayerController player = other.GetComponent<PlayerController>();
 
-            if (player.ItemList.Count < player.maxItemCount)
+            // PlayerController가 있는지 확인 (안전 장치)
+            if (player != null)
             {
-                // 아이템 추가
-                player.ItemList.Add(itemtype);
-
-                // UI 갱신 호출
-                player.UpdateItemSelectionUI();
-
-                Destroy(gameObject);
-            }
-            else
-            {
-               Debug.Log("아이템 슬롯이 가득 찼습니다!");
+                ProcessItem(player);
             }
         }
         else if (other.CompareTag("Bullet"))
         {
-            PlayerController player = gameManager.players[gameManager.currentPlayerIndex];
-
-            if (player.ItemList.Count < player.maxItemCount)
+            // Bullet에 맞았을 때는 현재 턴인 플레이어에게 아이템 지급
+            if (gameManager != null && gameManager.players.Count > 0)
             {
-                // 아이템 추가
-                player.ItemList.Add(itemtype);
-
-                // UI 갱신 호출
-                player.UpdateItemSelectionUI();
-
-                Destroy(gameObject);
+                PlayerController player = gameManager.players[gameManager.currentPlayerIndex];
+                ProcessItem(player);
             }
-            else
-            {
-               Debug.Log("아이템 슬롯이 가득 찼습니다!");
-            }
+        }
+    }
+
+    // 아이템 획득 로직이 중복되어 함수로 분리했습니다.
+    private void ProcessItem(PlayerController player)
+    {
+        if (player.ItemList.Count < player.maxItemCount)
+        {
+            // 아이템 추가
+            player.ItemList.Add(itemtype);
+
+            // UI 갱신 호출
+            player.UpdateItemSelectionUI();
+
+            Destroy(gameObject);
+        }
+        else
+        {
+            Debug.Log("아이템 슬롯이 가득 찼습니다!");
         }
     }
 }
