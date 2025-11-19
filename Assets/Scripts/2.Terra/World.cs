@@ -104,15 +104,7 @@ public class World : MonoBehaviour
                 }
             }
         }
-        foreach (CaptureZone zone in captureZones)
-        {
-            float distanceToZone = Vector3.Distance(worldPos, zone.transform.position);
-            if (distanceToZone <= zone.captureRadius)
-            {
-                Debug.Log("거점 보호 지역 안에서는 지형을 변경할 수 없습니다.");
-                return;
-            }
-        }
+        
         int chunkSize = chunkPrefab.GetComponent<Chunk>().chunkSize;
         int modificationRadiusInChunks = Mathf.CeilToInt(radius / chunkSize);
 
