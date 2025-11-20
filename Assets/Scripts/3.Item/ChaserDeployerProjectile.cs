@@ -57,6 +57,12 @@ public class ChaserDeployerProjectile : MonoBehaviour
     {
         if (isLanded) return;
         if (collision.gameObject.GetComponent<PlayerController>() != null) return;
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Environment"))
+        {
+            // 여기서 아무것도 안 하고 return 하면, 
+            // 유니티 물리 엔진이 알아서 충돌 계산(반사)을 수행합니다.
+            return;
+        }
 
         // ▼▼▼ [수정됨] 부화 로직을 별도 함수로 분리 ▼▼▼
 

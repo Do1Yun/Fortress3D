@@ -70,6 +70,13 @@ public class Projectile : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Bullet") || hasExploded) return;
 
+        
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Environment"))
+        {
+            
+            return;
+        }
+
         Explode(collision.contacts[0].point);
     }
 
