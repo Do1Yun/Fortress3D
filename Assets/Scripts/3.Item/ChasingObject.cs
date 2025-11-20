@@ -51,6 +51,7 @@ public class ChasingObject : MonoBehaviour
 
     private CharacterController controller;
     private Vector3 playerVelocity;
+    private float scale;
 
     void Awake()
     {
@@ -81,8 +82,10 @@ public class ChasingObject : MonoBehaviour
         // 수정 - 1120 by lee
         explosionEffectPrefab = (type == ProjectileType.TerrainPull || type == ProjectileType.TerrainPush) ? explosionEffectPrefab1 : explosionEffectPrefab2;
         explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
-        if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
-        else explosionEffectPrefab.transform.GetChild(0).localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+        scale = explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+        if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale *= scale;
+        else explosionEffectPrefab.transform.GetChild(0).localScale *= scale;
+        transform.localScale *= scale;
         // 수정 - 1120 by lee
 
         float stopDist = (type == ProjectileType.TerrainPull) ? explosionRadius : detonationDistance;
@@ -256,8 +259,9 @@ public class ChasingObject : MonoBehaviour
             // 파티클 길이를 모르니 3초 기본 삭제 (원하면 조절)
             Destroy(effect, 1f);
             // 수정 - 1120 by lee
-            if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
-            else explosionEffectPrefab.transform.GetChild(0).localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+            if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale /= scale;
+            else explosionEffectPrefab.transform.GetChild(0).localScale /= scale;
+            transform.localScale /= scale;
             // 수정 - 1120 by lee
         }
 
