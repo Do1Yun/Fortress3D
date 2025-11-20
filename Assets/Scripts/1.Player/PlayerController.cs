@@ -219,17 +219,20 @@ public class PlayerController : MonoBehaviour
                 break;
             case PlayerState.AimingVertical:
                 playerAiming.HandleVerticalAim();
-                if (trajectory != null) trajectory.ShowFixedTrajectory();
+                if (!trajectory.isPainted) trajectory.HideTrajectory();
+                else if (trajectory != null) trajectory.ShowFixedTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.AimingHorizontal:
                 playerAiming.HandleHorizontalAim();
-                if (trajectory != null) trajectory.ShowFixedTrajectory();
+                if (!trajectory.isPainted) trajectory.HideTrajectory();
+                else if (trajectory != null) trajectory.ShowFixedTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(false);
                 break;
             case PlayerState.SettingPower:
                 playerShooting.HandlePowerSetting();
-                if (trajectory != null) trajectory.ShowTrajectory();
+                if (!trajectory.isPainted) trajectory.HideTrajectory();
+                else if (trajectory != null) trajectory.ShowTrajectory();
                 if (Input.GetKeyDown(KeyCode.Space)) TransitionToNextStage(true);
                 break;
         }

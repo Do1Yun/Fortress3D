@@ -78,11 +78,12 @@ public class ChasingObject : MonoBehaviour
         this.isActivated = true;
         this.explosionRadius = newRadius;
 
-        // 수정 - 1119 by lee
+        // 수정 - 1120 by lee
         explosionEffectPrefab = (type == ProjectileType.TerrainPull || type == ProjectileType.TerrainPush) ? explosionEffectPrefab1 : explosionEffectPrefab2;
         explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
-        explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
-        // 수정 - 1119 by lee
+        if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+        else explosionEffectPrefab.transform.GetChild(0).localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+        // 수정 - 1120 by lee
 
         float stopDist = (type == ProjectileType.TerrainPull) ? explosionRadius : detonationDistance;
         Debug.Log($"[CHASER_DEBUG] 추적자 활성화! 임무: {type}. 정지 거리: {stopDist}m (Radius: {this.explosionRadius}m / Detonation: {detonationDistance}m)");
@@ -254,9 +255,10 @@ public class ChasingObject : MonoBehaviour
 
             // 파티클 길이를 모르니 3초 기본 삭제 (원하면 조절)
             Destroy(effect, 1f);
-            // 수정 - 1119 by lee
-            explosionEffectPrefab.transform.localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
-            // 수정 - 1119 by lee
+            // 수정 - 1120 by lee
+            if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+            else explosionEffectPrefab.transform.GetChild(0).localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+            // 수정 - 1120 by lee
         }
 
         if (explosionType == ProjectileType.TerrainDestruction || explosionType == ProjectileType.TerrainCreation)

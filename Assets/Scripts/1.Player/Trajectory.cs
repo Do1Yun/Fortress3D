@@ -57,7 +57,7 @@ public class Trajectory : MonoBehaviour
     // ★★★ 기존 로직 (현재 파워를 사용하는 함수) ★★★
     public void DrawTrajectory(Vector3 aimDirection, float currentPower)
     {
-        if (!isPainted || lr == null) return;
+        if (lr == null) return;
         Debug.Log("현재 파워 : " + currentPower);
 
         List<Vector3> points = new List<Vector3>();

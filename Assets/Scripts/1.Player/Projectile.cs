@@ -80,7 +80,8 @@ public class Projectile : MonoBehaviour
             if (explosionEffectPrefab != null)
             {
                 // 폭발 반경에 따라 이펙트 크기 조절
-                explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+                if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+                else explosionEffectPrefab.transform.GetChild(0).localScale *= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
             }
         }
     }
@@ -143,7 +144,8 @@ public class Projectile : MonoBehaviour
             // 이펙트 크기 원상복구 (Prefab 자체를 수정한게 아니라 인스턴스만 수정됨을 가정)
             // 주의: Prefab 원본의 localScale을 건드리면 안되므로, 여기서는 생성된 effect의 스케일을 조정하는 것이 더 안전할 수 있음.
             // 기존 코드 로직을 존중하여 유지.
-            explosionEffectPrefab.transform.localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+            if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
+            else explosionEffectPrefab.transform.GetChild(0).localScale /= explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
         }
 
         // ---------------------------------------------
