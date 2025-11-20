@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
 
     [Header("UI 연결")]
     public TextMeshProUGUI turnDisplayText;
+    public GameObject compass;
 
     [Header("플레이어 수,스코어")]
     public int minPlayersForGame = 2;
@@ -96,6 +97,7 @@ public class GameManager : MonoBehaviour
     {
         // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
         //SetGameState(GameState.MakeGround);
+        //compass.SetActive(false);
         //if (mainCameraController != null)
         //{
         //    mainCameraController.SetCamera(MGCamera.transform);
@@ -116,9 +118,11 @@ public class GameManager : MonoBehaviour
         //    yield return new WaitForSeconds(player.MakingGroundTime);
         //    yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
         //}
+        //compass.SetActive(true);
         // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
 
         // '우당탕탕' 종료 후 첫 번째 플레이어의 턴을 시작합니다.
+
         PlayerController firstPlayer = players[currentPlayerIndex];
         if (mainCameraController != null)
         {
