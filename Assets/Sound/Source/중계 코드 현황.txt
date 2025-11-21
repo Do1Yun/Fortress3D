@@ -1,0 +1,59 @@
+================================================================================
+[GameManager.cs] - 게임 진행 및 상태 관리
+================================================================================
+01. openingCommentary1        : 게임 시작 오프닝 멘트 1 (PlayOpeningCommentarySequence, 109줄)
+02. openingCommentary2        : 게임 시작 오프닝 멘트 2 (PlayOpeningCommentarySequence, 117줄)
+03. closingCommentary         : 우당탕탕(지형생성) 종료 멘트 (StartGameAfterDelay, 149줄)
+04. pointCommentary           : 1P 또는 2P 점수 획득 시 (SwitchToNextTurn, 213/229줄)
+05. NpCommentary              : 아무도 점령하지 않았을 때 (SwitchToNextTurn, 243줄)
+06. p2Commentary              : 둘 다 점령 구역에 있을 때 (SwitchToNextTurn, 256줄)
+07. turnCommentary            : 다음 턴 시작 시 [현재 확률 0%] (StartNextTurnWithDelay, 295줄)
+
+================================================================================
+[PlayerController.cs] - 플레이어 조작 및 상태
+================================================================================
+08. staminaDepletedCommentary1: 기동력 소진 멘트 1 (Update, 176줄)
+09. staminaDepletedCommentary2: 기동력 소진 멘트 2 [사용 안함] (Update, 176줄)
+10. moveStartCommentary1      : 이동 시작 멘트 1 [현재 확률 0%] (StartTurn, 234줄)
+11. moveStartCommentary2      : 이동 시작 멘트 2 [사용 안함] (StartTurn, 234줄)
+12. choiceCommentary          : 포탄 선택 단계 진입 시 (TransitionToNextStage, 285줄)
+13. NotchoiceCommentary       : 포탄 미선택(자동선택) 시 (TransitionToNextStage, 298줄)
+14. AimingVerticalCommentary  : 수직 조준 단계 진입 시 (TransitionToNextStage, 309줄)
+15. AimingHorizontalCommentary: 수평 조준 단계 진입 시 (TransitionToNextStage, 319줄)
+16. commentItemstamina        : 체력(스피드) 아이템 사용 시 (ApplyEffect_GameObject, 442줄)
+17. commentItem2x             : 사거리 증가 아이템 사용 시 (ApplyEffect_GameObject, 454줄)
+18. commentItemTurnOff        : 궤적 끄기 아이템 사용 시 (ApplyEffect_GameObject, 466줄)
+19. commentItemChasing        : 추적탄 아이템 사용 시 (ApplyEffect_GameObject, 477줄)
+
+================================================================================
+[PlayerShooting.cs] - 발사 관련
+================================================================================
+20. ChaserCommentary          : 추적탄(Chaser) 발사 시 (Fire, 128줄)
+
+================================================================================
+[PlayerMovement.cs] - 이동 및 리스폰
+================================================================================
+21. RespawnCommentary         : 플레이어 낙사/리스폰 시 (Respawn, 233줄)
+
+================================================================================
+[Projectile.cs] - 포탄 효과
+================================================================================
+22. TerrainPushCommentary     : 밀쳐내기(Push) 탄 폭발 시 (Explode, 139줄)
+23. TerrainPullCommentary     : 당기기(Pull) 탄 폭발 시 (Explode, 158줄)
+
+================================================================================
+[World.cs] - 지형 시스템
+================================================================================
+24. TerrainCreationCommentary : 지형 생성 탄 작동 시 (ModifyTerrain, 115줄)
+25. TerrainDestructionCommentary: 지형 파괴 탄 작동 시 (ModifyTerrain, 124줄)
+
+================================================================================
+[Item.cs] & [ItemSpawner.cs] - 아이템
+================================================================================
+26. itemCommentary            : 아이템 획득 시 (Item.cs - ProcessItem, 85줄)
+27. itemSpawnCommentary       : 맵에 아이템 생성될 때 (ItemSpawner.cs - SpawnItem, 57줄)
+
+================================================================================
+[ChaserDeployerProjectile.cs] - 추적탄
+================================================================================
+28. ChaserStrartCommentary    : 추적탄 착지 후 추적자 소환 시 (DeployChaser, 123줄)
