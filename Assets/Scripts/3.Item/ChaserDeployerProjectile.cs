@@ -13,6 +13,9 @@ public class ChaserDeployerProjectile : MonoBehaviour
     private float lifeTime = 5.0f;
     private float rotationSmoothSpeed = 10f;
     private Rigidbody rb;
+    [Header("오디오 설정")]
+    public AudioClip ChaserStrartCommentary;
+    public GameManager gameManager;
 
     // [추가] 충돌 직전의 속도를 저장하기 위한 변수 (Projectile.cs와 동일)
     private Vector3 lastVelocity;
@@ -28,8 +31,10 @@ public class ChaserDeployerProjectile : MonoBehaviour
 
     void Start()
     {
+        gameManager = GameManager.instance;
+        if (gameManager == null) gameManager = FindObjectOfType<GameManager>();
         rb = GetComponent<Rigidbody>();
-
+       
         // lifeTime초 후에 'HatchAtCurrentPosition' 함수를 실행하도록 예약합니다.
         Invoke(nameof(HatchAtCurrentPosition), lifeTime);
     }
@@ -117,7 +122,16 @@ public class ChaserDeployerProjectile : MonoBehaviour
         CancelInvoke();
 
         Debug.Log($"추적탄 착지! ({debugReason}) 페이로드를 전개합니다.");
+        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+        {
+            if (gameManager != null && gameManager.announcerAudioSource != null && ChaserStrartCommentary != null)
+            {
+                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                gameManager.announcerAudioSource.Stop();
+                gameManager.announcerAudioSource.PlayOneShot(ChaserStrartCommentary);
 
+            }
+        }
         // Y축 보정
         spawnPosition.y += 0.5f;
 

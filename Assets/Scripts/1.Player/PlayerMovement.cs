@@ -4,6 +4,8 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
+    private GameManager gameManager;
+
     [Header("이동 설정")]
     public float acceleration = 15.0f;
     public float maxSpeed = 10.0f;
@@ -23,7 +25,8 @@ public class PlayerMovement : MonoBehaviour
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
     public float currentStamina;
-
+    [Header("오디오 설정")]
+    public AudioClip RespawnCommentary;
     private float baseMaxStamina;
     private Image staminaImage;
     private CharacterController characterController;
@@ -56,6 +59,10 @@ public class PlayerMovement : MonoBehaviour
 
     void Awake()
     {
+        gameManager = FindObjectOfType<GameManager>();
+
+        if (gameManager == null)
+            Debug.LogError("GameManager를 찾을 수 없습니다!");
         characterController = GetComponent<CharacterController>();
         baseMaxStamina = maxStamina;
         currentStamina = maxStamina;
@@ -222,6 +229,15 @@ public class PlayerMovement : MonoBehaviour
     // ===================== 리스폰 =====================
     public void Respawn()
     {
+        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+        {
+            if (gameManager != null && gameManager.announcerAudioSource != null && RespawnCommentary != null)
+            {
+                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                gameManager.announcerAudioSource.Stop();
+                gameManager.announcerAudioSource.PlayOneShot(RespawnCommentary);
+            }
+        }
         if (respawnPoint == null)
         {
             Debug.LogWarning("[Respawn] respawnPoint가 비어있습니다.");

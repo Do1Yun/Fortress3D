@@ -134,3 +134,7 @@ MonoBehaviour:
   terrainModificationStrength: 1
   explosionForce: 500
   playerKnockbackForce: 20
+  TerrainDestructionCommentary: {fileID: 0}
+  TerrainCreationCommentary: {fileID: 0}
+  TerrainPushCommentary: {fileID: 8300000, guid: 75e2e84a2ae302c408ec53384d60accc, type: 3}
+  TerrainPullCommentary: {fileID: 0}

@@ -4,10 +4,18 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
     public static World Instance { get; private set; }
+    private GameManager gameManager; // 변수 선언
 
     [Header("맵 설정")]
     public GameObject chunkPrefab;
     public Vector2Int worldSizeInChunks = new Vector2Int(4, 4);
+
+    [Header("지형 감지 레이어")]
+    public LayerMask terrainLayer; // ★ 인스펙터에서 Environment 레이어 할당 필수!
+
+    [Header("오디오 설정")]
+    public AudioClip TerrainDestructionCommentary; // 파괴 멘트
+    public AudioClip TerrainCreationCommentary;    // 생성 멘트
 
     private Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
     private List<CaptureZone> captureZones;
@@ -24,35 +32,32 @@ public class World : MonoBehaviour
             Instance = this;
         }
 
-        // 보호 구역은 Awake에서 찾아두는 것이 좋습니다.
         captureZones = new List<CaptureZone>(FindObjectsOfType<CaptureZone>());
         spawnZones = new List<SpawnZone>(FindObjectsOfType<SpawnZone>());
     }
 
     void Start()
     {
-        
-       
+        gameManager = GameManager.instance;
+        if (gameManager == null) gameManager = FindObjectOfType<GameManager>();
+     
+
         if (Application.isPlaying)
         {
             GenerateWorld();
         }
-      
     }
 
     [ContextMenu("Generate World (Editor)")]
     public void GenerateWorld()
     {
-        // 1. 맵 생성 전, 기존 맵이 있다면 삭제합니다.
         ClearWorld();
 
-        // 2. (중요) 에디터에서 실행 시 보호 구역 리스트를 다시 찾아옵니다.
         captureZones = new List<CaptureZone>(FindObjectsOfType<CaptureZone>());
         spawnZones = new List<SpawnZone>(FindObjectsOfType<SpawnZone>());
 
         if (chunkPrefab == null)
         {
-            Debug.LogError("Chunk Prefab이 할당되지 않았습니다!");
             return;
         }
 
@@ -75,14 +80,10 @@ public class World : MonoBehaviour
         }
     }
 
-    // 인스펙터의 컨텍스트 메뉴(점 3개)에 "Clear World (Editor)" 옵션을 추가합니다.
     [ContextMenu("Clear World (Editor)")]
     public void ClearWorld()
     {
         chunks.Clear();
-
-        // 자식 오브젝트(청크들)를 파괴합니다.
-        // 에디터 모드에서는 DestroyImmediate를 사용해야 안전합니다.
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             DestroyImmediate(transform.GetChild(i).gameObject);
@@ -92,6 +93,7 @@ public class World : MonoBehaviour
 
     public void ModifyTerrain(Vector3 worldPos, float modificationAmount, float radius)
     {
+        // 1. 스폰 보호 구역 체크
         foreach (SpawnZone zone in spawnZones)
         {
             if (zone.zoneCollider.bounds.Contains(worldPos))
@@ -104,7 +106,33 @@ public class World : MonoBehaviour
                 }
             }
         }
-        
+
+        if (GameManager.instance.dangtang == false)
+        {
+            // 2. 허공 체크 및 멘트 재생
+            if (modificationAmount > 0) // 생성
+            {
+                if (Physics.CheckSphere(worldPos, radius, terrainLayer))
+                {
+                    PlayTerrainAudio(TerrainCreationCommentary);
+                }
+            }
+            else // 파괴
+            {
+                // ★ 허공인지 체크 (반경 내에 Environment 레이어가 없으면 파괴 안 함 & 소리 안 냄)
+                if (Physics.CheckSphere(worldPos, radius, terrainLayer))
+                {
+                    PlayTerrainAudio(TerrainDestructionCommentary);
+                }
+                else
+                {
+                    // 허공이면 함수 종료 (아무 일도 안 일어남)
+                    return;
+                }
+            }
+        }
+
+        // 3. 실제 지형 수정 로직
         int chunkSize = chunkPrefab.GetComponent<Chunk>().chunkSize;
         int modificationRadiusInChunks = Mathf.CeilToInt(radius / chunkSize);
 
@@ -120,6 +148,20 @@ public class World : MonoBehaviour
                 {
                     chunk.ModifyTerrain(worldPos, modificationAmount, radius);
                 }
+            }
+        }
+    }
+
+    // 중복 코드를 줄이기 위한 내부 함수
+    void PlayTerrainAudio(AudioClip clip)
+    {
+        // 확률 체크 (100%)
+        if (Random.value <= 1.0f)
+        {
+            if (gameManager != null && gameManager.announcerAudioSource != null && clip != null)
+            {
+                gameManager.announcerAudioSource.Stop();
+                gameManager.announcerAudioSource.PlayOneShot(clip);
             }
         }
     }

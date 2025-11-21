@@ -59,6 +59,10 @@ public class PlayerController : MonoBehaviour
     public AudioClip choiceCommentary;
     [Tooltip("탄 자동 선택 멘트")]
     public AudioClip NotchoiceCommentary;
+    [Tooltip("탄 자동 선택 멘트")]
+    public AudioClip AimingVerticalCommentary;
+    public AudioClip AimingHorizontalCommentary;
+
 
     [Header("아이템 사용 멘트 (4종류)")]
     public AudioClip commentItemstamina;   // 회복 아이템
@@ -313,7 +317,7 @@ public class PlayerController : MonoBehaviour
         Debug.Log($"[LOG] Player {playerID}: 이동 시작 상황 발생!"); // 무조건 로그 출력
 
         // 50% 확률로 멘트 재생
-        if (Random.value <= 1.0f)//확률
+        if (Random.value <= 0f)//확률
         {
             // ★★★ StartCoroutine 직접 호출 대신 TriggerCommentary 사용 ★★★
             TriggerCommentary(moveStartCommentary1, moveStartCommentary2);
@@ -423,9 +427,28 @@ public class PlayerController : MonoBehaviour
                     SelectProjectile(0, false);
                 }
                 SetPlayerState(PlayerState.AimingVertical);
+                GameManager.instance.dangtang = false;
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (gameManager != null && gameManager.announcerAudioSource != null && AimingVerticalCommentary != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        gameManager.announcerAudioSource.Stop();
+                        gameManager.announcerAudioSource.PlayOneShot(AimingVerticalCommentary);
+                    }
+                }
                 break;
             case PlayerState.AimingVertical:
                 SetPlayerState(PlayerState.AimingHorizontal);
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (gameManager != null && gameManager.announcerAudioSource != null && AimingHorizontalCommentary != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        gameManager.announcerAudioSource.Stop();
+                        gameManager.announcerAudioSource.PlayOneShot(AimingHorizontalCommentary);
+                    }
+                }
                 break;
             case PlayerState.AimingHorizontal:
                 playerShooting.ResetPowerGauge();

@@ -7,7 +7,8 @@ public class PlayerShooting : MonoBehaviour
     [Header("발사 지점")]
     public Transform firePoint;
     private GameObject currentProjectilePrefab;
-
+    [Header("오디오 설정")]
+    public AudioClip ChaserCommentary;
     [Header("발사 파워 설정")]
     public float minLaunchPower = 10f;
     public float maxLaunchPower = 50f;
@@ -26,9 +27,13 @@ public class PlayerShooting : MonoBehaviour
     private bool isPowerIncreasing = true;
 
     private Collider playerCollider;
+    public GameManager gameManager;
+
 
     void Awake()
     {
+        gameManager = GameManager.instance;
+        if (gameManager == null) gameManager = FindObjectOfType<GameManager>();
         playerCollider = GetComponent<Collider>();
         if (playerCollider == null)
         {
@@ -118,6 +123,16 @@ public class PlayerShooting : MonoBehaviour
         // ▼▼▼ [추가됨] "알" 포탄에 선택한 탄 타입 주입 ▼▼▼
         if (isChaser)
         {
+            if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+            {
+                if (gameManager != null && gameManager.announcerAudioSource != null && ChaserCommentary != null)
+                {
+                    // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                    gameManager.announcerAudioSource.Stop();
+                    gameManager.announcerAudioSource.PlayOneShot(ChaserCommentary);
+
+                }
+            }
             // 1. 방금 선택한 탄의 타입을 PlayerController로부터 가져옴
             ProjectileType selectedType = playerController.GetSelectedProjectileType();
 

@@ -19,6 +19,10 @@ public class GameManager : MonoBehaviour
     public AudioClip openingCommentary1;     // 첫 번째 멘트 파일
     public AudioClip openingCommentary2;     // 두 번째 멘트 파일
     public AudioClip closingCommentary;
+    public AudioClip turnCommentary;
+    public AudioClip pointCommentary;
+    public AudioClip p2Commentary;
+    public AudioClip NpCommentary;
 
     [Header("메인카메라 지정")]
     public CameraController mainCameraController;
@@ -36,6 +40,8 @@ public class GameManager : MonoBehaviour
     public int playerInCaptureZone = 0;
 
     private bool TurnFlag = false;
+    public bool dangtang = false;
+
 
     public enum GameState
     {
@@ -118,36 +124,38 @@ public class GameManager : MonoBehaviour
     {
 
         // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
-       
-        //SetGameState(GameState.MakeGround);
-        //compass.SetActive(false);
-        //if (mainCameraController != null)
-        //{
-        //    mainCameraController.SetCamera(MGCamera.transform);
-        //}
-        //StartCoroutine(PlayOpeningCommentarySequence());
-        //// ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
-        //if (turnDisplayText != null)
-        //{
-        //    turnDisplayText.text = "전투 준비!";
-        //}
-        //// ▲▲▲ [여기까지 추가] ▲▲▲
-        
-        //// 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
-        //foreach (var player in players)
-        //{
-        //    player.MakeGround();
-        //    // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
-        //    yield return new WaitForSeconds(player.MakingGroundTime);
-        //    yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
-        //}
+        dangtang = true;
+        SetGameState(GameState.MakeGround);
+        compass.SetActive(false);
+        if (mainCameraController != null)
+        {
+            mainCameraController.SetCamera(MGCamera.transform);
+        }
+        StartCoroutine(PlayOpeningCommentarySequence());
+        // ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
+        if (turnDisplayText != null)
+        {
+            turnDisplayText.text = "전투 준비!";
+        }
+        // ▲▲▲ [여기까지 추가] ▲▲▲
 
-        //if (announcerAudioSource != null && closingCommentary != null)
-        //{
-        //    announcerAudioSource.Stop(); // 혹시 오프닝 멘트가 남았다면 중지
-        //    announcerAudioSource.PlayOneShot(closingCommentary);
-        //}
-        //compass.SetActive(true);
+        // 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
+        foreach (var player in players)
+        {
+            player.MakeGround();
+            // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
+            yield return new WaitForSeconds(player.MakingGroundTime);
+            yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
+        }
+
+        if (announcerAudioSource != null && closingCommentary != null)
+        {
+            announcerAudioSource.Stop(); // 혹시 오프닝 멘트가 남았다면 중지
+            announcerAudioSource.PlayOneShot(closingCommentary);
+        }
+        compass.SetActive(true);
+
+
         // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
 
         // '우당탕탕' 종료 후 첫 번째 플레이어의 턴을 시작합니다.
@@ -200,6 +208,16 @@ public class GameManager : MonoBehaviour
             if (players[0].isInCaptureZone && !players[1].isInCaptureZone)
             {
                 score_player1 += 1;
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (announcerAudioSource != null && pointCommentary != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        announcerAudioSource.Stop();
+                        announcerAudioSource.PlayOneShot(pointCommentary);
+
+                    }
+                }
             }
         }
         else
@@ -207,8 +225,45 @@ public class GameManager : MonoBehaviour
              if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
             {
                 score_player2 += 1;
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (announcerAudioSource != null && pointCommentary != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        announcerAudioSource.Stop();
+                        announcerAudioSource.PlayOneShot(pointCommentary);
+
+                    }
+                }
             }
         }
+        if (!players[1].isInCaptureZone && !players[0].isInCaptureZone)
+        {
+            if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+            {
+                if (announcerAudioSource != null && NpCommentary != null)
+                {
+                    // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                    announcerAudioSource.Stop();
+                    announcerAudioSource.PlayOneShot(NpCommentary);
+
+                }
+            }
+        }
+        if (players[1].isInCaptureZone && players[0].isInCaptureZone)
+        {
+            if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+            {
+                if (announcerAudioSource != null && p2Commentary != null)
+                {
+                    // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                    announcerAudioSource.Stop();
+                    announcerAudioSource.PlayOneShot(p2Commentary);
+
+                }
+            }
+        }
+         
 
         if ((score_player1 >= WinningScore) || (score_player2 >= WinningScore))
         {
@@ -256,6 +311,16 @@ public class GameManager : MonoBehaviour
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
         Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!");
+        if (Random.value <= 0.0f) // 확률 (현재 100%로 설정됨)
+        {
+            if (announcerAudioSource != null && turnCommentary != null)
+            {
+                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                announcerAudioSource.Stop();
+                announcerAudioSource.PlayOneShot(turnCommentary);
+
+            }
+        }
     }
 
     private bool CheckGameOverCondition()

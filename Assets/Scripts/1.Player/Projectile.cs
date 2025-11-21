@@ -22,7 +22,10 @@ public class Projectile : MonoBehaviour
     public float terrainModificationStrength = 2.0f;
     public float explosionForce = 500f;
     public float playerKnockbackForce = 20f;
-
+    [Header("오디오 설정")]
+  
+    public AudioClip TerrainPushCommentary;     // 두 번째 멘트 파일
+    public AudioClip TerrainPullCommentary;
     private bool hasExploded = false;
     private Rigidbody rb;
     private GameManager gameManager;
@@ -174,6 +177,7 @@ public class Projectile : MonoBehaviour
                         -terrainModificationStrength,
                         explosionRadius
                     );
+                    
                 }
                 break;
 
@@ -185,6 +189,7 @@ public class Projectile : MonoBehaviour
                         terrainModificationStrength,
                         explosionRadius
                     );
+                   
                 }
                 break;
 
@@ -194,9 +199,20 @@ public class Projectile : MonoBehaviour
                     PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
                     if (player != null)
                     {
+                        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                        {
+                            if (gameManager != null && gameManager.announcerAudioSource != null && TerrainPushCommentary != null)
+                            {
+                                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                                gameManager.announcerAudioSource.Stop();
+                                gameManager.announcerAudioSource.PlayOneShot(TerrainPushCommentary);
+                            }
+                        }
                         Vector3 direction = player.transform.position - explosionPosition;
                         player.ApplyKnockback(direction, playerKnockbackForce);
+
                     }
+
                 }
                 break;
 
@@ -206,6 +222,15 @@ public class Projectile : MonoBehaviour
                     PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
                     if (player != null)
                     {
+                        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                        {
+                            if (gameManager != null && gameManager.announcerAudioSource != null && TerrainPullCommentary != null)
+                            {
+                                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                                gameManager.announcerAudioSource.Stop();
+                                gameManager.announcerAudioSource.PlayOneShot(TerrainPullCommentary);
+                            }
+                        }
                         Vector3 direction = explosionPosition - player.transform.position;
                         player.ApplyKnockback(direction, playerKnockbackForce);
                     }
