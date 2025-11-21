@@ -267,7 +267,7 @@ public class GameManager : MonoBehaviour
 
         if ((score_player1 >= WinningScore) || (score_player2 >= WinningScore))
         {
-            Debug.Log("Hello");
+            Debug.Log("gameover!");
             SceneManager.LoadScene("GameoverScene");
         }
 
