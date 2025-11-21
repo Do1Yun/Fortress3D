@@ -11,10 +11,20 @@ MonoImporter:
   - timerText: {instanceID: 0}
   - timerImage: {instanceID: 0}
   - rerollCountText: {instanceID: 0}
+  - uiAudioSource: {instanceID: 0}
+  - uiSlideInSound: {instanceID: 0}
+  - uiSlideOutSound: {instanceID: 0}
+  - moveStartCommentary1: {instanceID: 0}
+  - moveStartCommentary2: {instanceID: 0}
+  - staminaDepletedCommentary1: {instanceID: 0}
+  - staminaDepletedCommentary2: {instanceID: 0}
   - trajectory: {instanceID: 0}
   - healthIcon: {fileID: 21300000, guid: 58deb80820034564ca7506a4d520f595, type: 3}
   - rangeIcon: {fileID: 21300000, guid: 9149cb64421bf584abe651480212fe41, type: 3}
   - turnoffIcon: {fileID: 21300000, guid: 9779f91ec939ceb4cb9f623a898381d7, type: 3}
+  - chasingIcon: {fileID: 21300000, guid: 6d10abb878fc32847ae0dfe095067e46, type: 3}
+  - BuffEffectPrefab: {instanceID: 0}
+  - DebuffEffectPrefab: {instanceID: 0}
   - mainCamera: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}

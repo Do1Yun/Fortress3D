@@ -14,7 +14,9 @@ public class ItemSpawner : MonoBehaviour
 
     public GameManager gameManager;
     private float timer;
-
+    [Header("오디오 설정")]
+    [Tooltip("아이템이 생성될 때 재생할 중계 멘트")]
+    public AudioClip itemSpawnCommentary;
     void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
@@ -48,7 +50,17 @@ public class ItemSpawner : MonoBehaviour
         );
 
         GameObject item = Instantiate(itemPrefab, spawnPos, Quaternion.identity);
-        
+        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+        {
+            if (gameManager != null && gameManager.announcerAudioSource != null && itemSpawnCommentary != null)
+            {
+                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                gameManager.announcerAudioSource.Stop();
+                gameManager.announcerAudioSource.PlayOneShot(itemSpawnCommentary);
+                Debug.Log("아이템 생성 멘트 재생!");
+            }
+        }
+
     }
 }
 

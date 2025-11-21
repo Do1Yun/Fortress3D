@@ -14,6 +14,11 @@ public class GameManager : MonoBehaviour
     public List<PlayerController> players;
     public List<PlayerMovement> players_movement;
     public int currentPlayerIndex = 0;
+    [Header("오디오 설정")]
+    public AudioSource announcerAudioSource; // 중계 멘트를 재생할 오디오 소스
+    public AudioClip openingCommentary1;     // 첫 번째 멘트 파일
+    public AudioClip openingCommentary2;     // 두 번째 멘트 파일
+    public AudioClip closingCommentary;
 
     [Header("메인카메라 지정")]
     public CameraController mainCameraController;
@@ -92,33 +97,57 @@ public class GameManager : MonoBehaviour
         StartCoroutine(StartGameAfterDelay(1.0f));
     }
 
+    IEnumerator PlayOpeningCommentarySequence()
+    {
+        // 첫 번째 멘트 재생
+        if (announcerAudioSource != null && openingCommentary1 != null)
+        {
+            announcerAudioSource.PlayOneShot(openingCommentary1);
+            // 멘트 길이만큼 대기 (이 코루틴만 대기하고, 메인 게임 흐름은 멈추지 않음)
+            yield return new WaitForSecondsRealtime(openingCommentary1.length);
+        }
 
+        // 두 번째 멘트 재생
+        if (announcerAudioSource != null && openingCommentary2 != null)
+        {
+            announcerAudioSource.PlayOneShot(openingCommentary2);
+            yield return new WaitForSecondsRealtime(openingCommentary2.length);
+        }
+    }
     IEnumerator StartGameAfterDelay(float delay)
     {
+
         // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
-        SetGameState(GameState.MakeGround);
-        compass.SetActive(false);
-        if (mainCameraController != null)
-        {
-            mainCameraController.SetCamera(MGCamera.transform);
-        }
+       
+        //SetGameState(GameState.MakeGround);
+        //compass.SetActive(false);
+        //if (mainCameraController != null)
+        //{
+        //    mainCameraController.SetCamera(MGCamera.transform);
+        //}
+        //StartCoroutine(PlayOpeningCommentarySequence());
+        //// ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
+        //if (turnDisplayText != null)
+        //{
+        //    turnDisplayText.text = "전투 준비!";
+        //}
+        //// ▲▲▲ [여기까지 추가] ▲▲▲
+        
+        //// 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
+        //foreach (var player in players)
+        //{
+        //    player.MakeGround();
+        //    // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
+        //    yield return new WaitForSeconds(player.MakingGroundTime);
+        //    yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
+        //}
 
-        // ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
-        if (turnDisplayText != null)
-        {
-            turnDisplayText.text = "전투 준비!";
-        }
-        // ▲▲▲ [여기까지 추가] ▲▲▲
-
-        // 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
-        foreach (var player in players)
-        {
-            player.MakeGround();
-            // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
-            yield return new WaitForSeconds(player.MakingGroundTime);
-            yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
-        }
-        compass.SetActive(true);
+        //if (announcerAudioSource != null && closingCommentary != null)
+        //{
+        //    announcerAudioSource.Stop(); // 혹시 오프닝 멘트가 남았다면 중지
+        //    announcerAudioSource.PlayOneShot(closingCommentary);
+        //}
+        //compass.SetActive(true);
         // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
 
         // '우당탕탕' 종료 후 첫 번째 플레이어의 턴을 시작합니다.

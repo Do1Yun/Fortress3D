@@ -22,7 +22,9 @@ public class Item : MonoBehaviour
     private GameManager gameManager;
     private Rigidbody rb;
     private MeshRenderer meshRenderer;
-
+    [Header("오디오 설정")]
+    [Tooltip("아이템이 생성될 때 재생할 중계 멘트")]
+    public AudioClip itemCommentary;
     private void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
@@ -80,6 +82,16 @@ public class Item : MonoBehaviour
     {
         if (player.ItemList.Count < player.maxItemCount)
         {
+            if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+            {
+                if (gameManager != null && gameManager.announcerAudioSource != null && itemCommentary != null)
+                {
+                    // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                    gameManager.announcerAudioSource.Stop();
+                    gameManager.announcerAudioSource.PlayOneShot(itemCommentary);
+                    Debug.Log("아이템 획득 멘트 재생!");
+                }
+            }
             // 아이템 추가
             player.ItemList.Add(itemtype);
 

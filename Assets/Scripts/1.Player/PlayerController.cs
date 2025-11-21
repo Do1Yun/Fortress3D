@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -33,7 +34,6 @@ public class PlayerController : MonoBehaviour
     public TextMeshProUGUI rerollCountText;
     public List<Image> itemSlotImages;
 
-    // ▼▼▼ [UITweener 시스템 복원] ▼▼▼
     [Header("상태별 UI 설정")]
     [Tooltip("상태에 따라 제어할 모든 UI 트위너들을 여기에 등록합니다.")]
     public List<UITweener> allManagedTweeners;
@@ -44,7 +44,33 @@ public class PlayerController : MonoBehaviour
     public AudioSource uiAudioSource;
     public AudioClip uiSlideInSound;
     public AudioClip uiSlideOutSound;
-    // ▲▲▲ [여기까지 복원] ▲▲▲
+
+    [Header("중계 멘트 설정")]
+    [Tooltip("이동 시작 시 재생할 첫 번째 멘트")]
+    public AudioClip moveStartCommentary1;
+    [Tooltip("이동 시작 시 재생할 두 번째 멘트")]
+    public AudioClip moveStartCommentary2;
+
+    [Tooltip("기동력 소진 시 재생할 첫 번째 멘트")]
+    public AudioClip staminaDepletedCommentary1;
+    [Tooltip("기동력 소진 시 재생할 두 번째 멘트")]
+    public AudioClip staminaDepletedCommentary2; 
+    [Tooltip("탄 선택 멘트")]
+    public AudioClip choiceCommentary;
+    [Tooltip("탄 자동 선택 멘트")]
+    public AudioClip NotchoiceCommentary;
+
+    [Header("아이템 사용 멘트 (4종류)")]
+    public AudioClip commentItemstamina;   // 회복 아이템
+    public AudioClip commentItem2x;    // 사거리 증가
+    public AudioClip commentItemTurnOff;  // 상대 궤적 끄기
+    public AudioClip commentItemChasing;
+
+    private bool hasPlayedStaminaCommentary = false; // 턴 당 1회 재생 체크용
+
+    // ▼▼▼ [추가됨] 현재 재생 중인 멘트 코루틴 추적용 변수 ▼▼▼
+    private Coroutine activeCommentaryCoroutine;
+    // ▲▲▲ [여기까지 추가] ▲▲▲
 
     [Header("상태별 시간 제한")]
     public float stageTimeLimit = 5.0f;
@@ -69,10 +95,6 @@ public class PlayerController : MonoBehaviour
     private bool using_chasingItem = false;
     public GameObject BuffEffectPrefab;
     public GameObject DebuffEffectPrefab;
-    //public bool test_speed = false;
-    //public bool test_double = false;
-    //public bool test_chasing = false;
-    //public bool test_leesin = false;
 
     [Header("점령 데이터")]
     public bool isInCaptureZone = false;
@@ -123,7 +145,6 @@ public class PlayerController : MonoBehaviour
             mainCamera = Camera.main;
         }
         UpdateItemSelectionUI();
-        // testItem();
     }
 
     void Update()
@@ -174,6 +195,25 @@ public class PlayerController : MonoBehaviour
                 playerMovement.HandleMovement();
                 HandleItemHotkeys();
                 if (trajectory != null) trajectory.HideTrajectory();
+
+                // ▼▼▼ [수정됨] 기동력 소진 체크 및 멘트 재생 로직 ▼▼▼
+                if (playerMovement.currentStamina <= 0)
+                {
+                    if (!hasPlayedStaminaCommentary)
+                    {
+                        hasPlayedStaminaCommentary = true; // 중복 재생 방지
+
+                        Debug.Log($"[LOG] Player {playerID}: 기동력 소진 상황 발생!"); // 무조건 로그 출력
+
+                        if (Random.value <= 1.0f)//확률
+                        {
+                            // ★★★ StartCoroutine 직접 호출 대신 TriggerCommentary 사용 ★★★
+                            TriggerCommentary(staminaDepletedCommentary1, staminaDepletedCommentary2);
+                        }
+                    }
+                }
+                // ▲▲▲ [여기까지 수정] ▲▲▲
+
                 if (Input.GetKeyDown(KeyCode.Space) || playerMovement.currentStamina <= 0)
                 {
                     TransitionToNextStage(false);
@@ -249,7 +289,6 @@ public class PlayerController : MonoBehaviour
     }
 
     // 턴 시작 시 호출되는 함수
-
     public void StartTurn()
     {
         playerMovement.ResetStamina();
@@ -257,6 +296,9 @@ public class PlayerController : MonoBehaviour
         using_chasingItem = false;
         selectedProjectile = null;
         isNextShotChaser = false;
+
+        // ▼▼▼ [수정됨] 턴 시작 초기화 및 이동 시작 멘트 로직 ▼▼▼
+        hasPlayedStaminaCommentary = false; // 기동력 소진 멘트 플래그 초기화
 
         if (playerShooting != null)
         {
@@ -266,12 +308,81 @@ public class PlayerController : MonoBehaviour
         currentStageTimer = stageTimeLimit;
         SetPlayerState(PlayerState.Moving);
         Debug.Log($"======== PLAYER {playerID} TURN START (타이머: {currentStageTimer}) ========");
+
+        // 이동 시작 상황 로그 및 멘트 재생
+        Debug.Log($"[LOG] Player {playerID}: 이동 시작 상황 발생!"); // 무조건 로그 출력
+
+        // 50% 확률로 멘트 재생
+        if (Random.value <= 1.0f)//확률
+        {
+            // ★★★ StartCoroutine 직접 호출 대신 TriggerCommentary 사용 ★★★
+            TriggerCommentary(moveStartCommentary1, moveStartCommentary2);
+        }
+        // ▲▲▲ [여기까지 수정] ▲▲▲
     }
+
+    // ▼▼▼ [추가됨] 중단 가능한 멘트 재생 함수 (핵심 로직) ▼▼▼
+    public void TriggerCommentary(AudioClip clip1, AudioClip clip2)
+    {
+        // 1. 이미 재생 중인 코루틴이 있다면 강제 중단
+        if (activeCommentaryCoroutine != null)
+        {
+            StopCoroutine(activeCommentaryCoroutine);
+        }
+
+        // 2. 오디오 소스가 재생 중이라면 즉시 정지 (소리 끊기)
+        if (GameManager.instance != null && GameManager.instance.announcerAudioSource != null)
+        {
+            GameManager.instance.announcerAudioSource.Stop();
+        }
+
+        // 3. 새로운 멘트 코루틴 시작
+        activeCommentaryCoroutine = StartCoroutine(PlayCommentarySequence(clip1, clip2));
+    }
+
+    IEnumerator PlayCommentarySequence(AudioClip clip1, AudioClip clip2)
+    {
+        // GameManager의 아나운서 오디오 소스를 빌려서 사용 (중계 느낌)
+        AudioSource announcer = null;
+        if (GameManager.instance != null)
+        {
+            announcer = GameManager.instance.announcerAudioSource;
+        }
+
+        if (announcer == null) yield break;
+
+        // 첫 번째 멘트
+        if (clip1 != null)
+        {
+            announcer.PlayOneShot(clip1);
+            yield return new WaitForSecondsRealtime(clip1.length);
+        }
+
+        // 두 번째 멘트
+        if (clip2 != null)
+        {
+            announcer.PlayOneShot(clip2);
+            yield return new WaitForSecondsRealtime(clip2.length);
+        }
+
+        // 재생 완료 후 변수 초기화
+        activeCommentaryCoroutine = null;
+    }
+    // ▲▲▲ [여기까지 추가] ▲▲▲
 
     // 턴 종료 시 호출되는 함수
     public void EndTurn()
     {
         if (trajectory != null) trajectory.HideTrajectory();
+
+        // ▼▼▼ [추가됨] 턴 종료 시 혹시 재생 중인 멘트가 있다면 정리 ▼▼▼
+        if (activeCommentaryCoroutine != null)
+        {
+            StopCoroutine(activeCommentaryCoroutine);
+            activeCommentaryCoroutine = null;
+        }
+        // ▲▲▲ [여기까지 추가] ▲▲▲
+
         SetPlayerState(PlayerState.Waiting);
         Debug.Log($"Player {playerID}의 턴 종료!");
     }
@@ -285,16 +396,32 @@ public class PlayerController : MonoBehaviour
         {
             case PlayerState.Moving:
                 GenerateProjectileSelection();
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (gameManager != null && gameManager.announcerAudioSource != null && choiceCommentary != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        gameManager.announcerAudioSource.Stop();
+                        gameManager.announcerAudioSource.PlayOneShot(choiceCommentary);
+                    }
+                }
                 SetPlayerState(PlayerState.SelectingProjectile);
                 break;
             case PlayerState.SelectingProjectile:
-                // ▼▼▼ [수정됨] 타임아웃/미선택 시 첫 번째 탄으로 자동 선택 ▼▼▼
                 if (selectedProjectile == null)
                 {
                     Debug.Log("포탄을 선택하지 않아 첫 번째 포탄으로 자동 선택됩니다.");
-                    SelectProjectile(0, false); // 자동으로 0번 탄 선택 (전환은 X)
+                    if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                    {
+                        if (gameManager != null && gameManager.announcerAudioSource != null && NotchoiceCommentary != null)
+                        {
+                            // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                            gameManager.announcerAudioSource.Stop();
+                            gameManager.announcerAudioSource.PlayOneShot(NotchoiceCommentary);
+                        }
+                    }
+                    SelectProjectile(0, false);
                 }
-                // ▲▲▲ [여기까지 수정] ▲▲▲
                 SetPlayerState(PlayerState.AimingVertical);
                 break;
             case PlayerState.AimingVertical:
@@ -314,6 +441,7 @@ public class PlayerController : MonoBehaviour
     // 탄 선택 입력 처리
     void HandleProjectileSelection()
     {
+       
         if (Input.GetKeyDown(KeyCode.Alpha1)) SelectProjectile(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SelectProjectile(1);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SelectProjectile(2);
@@ -489,45 +617,64 @@ public class PlayerController : MonoBehaviour
         switch (item)
         {
             case ItemType.Health:
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (gameManager != null && gameManager.announcerAudioSource != null && commentItemstamina != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        gameManager.announcerAudioSource.Stop();
+                        gameManager.announcerAudioSource.PlayOneShot(commentItemstamina);
+                        Debug.Log("아이템 사용 멘트 재생!");
+                    }
+                }
+               
                 playerMovement.speedMultiplier *= 1.5f;
                 break;
 
             case ItemType.Range:
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (gameManager != null && gameManager.announcerAudioSource != null && commentItem2x != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        gameManager.announcerAudioSource.Stop();
+                        gameManager.announcerAudioSource.PlayOneShot(commentItem2x);
+                        Debug.Log("아이템 획득 멘트 재생!");
+                    }
+                }
+               
                 Player.ExplosionRange *= 1.5f;
                 break;
 
             case ItemType.TurnOff:
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (gameManager != null && gameManager.announcerAudioSource != null && commentItemTurnOff != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        gameManager.announcerAudioSource.Stop();
+                        gameManager.announcerAudioSource.PlayOneShot(commentItemTurnOff);
+                        Debug.Log("아이템 획득 멘트 재생!");
+                    }
+                }
                 nextPlayer.trajectory.isPainted = false;
                 break;
             case ItemType.Chasing:
+                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                {
+                    if (gameManager != null && gameManager.announcerAudioSource != null && commentItemChasing != null)
+                    {
+                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
+                        gameManager.announcerAudioSource.Stop();
+                        gameManager.announcerAudioSource.PlayOneShot(commentItemChasing);
+                        Debug.Log("아이템 획득 멘트 재생!");
+                    }
+                }
+               
                 using_chasingItem = true;
                 break;
         }
     }
-
-    //public void testItem()
-    //{
-    //    PlayerMovement playerMovement = gameManager.players_movement[playerID];
-    //    PlayerController Player = gameManager.players[playerID];
-    //    PlayerController nextPlayer = gameManager.players[(playerID + 1) % 2];
-    //    if (test_speed)
-    //    {
-    //        playerMovement.speedMultiplier = 1.5f;
-    //    }
-    //    if (test_chasing)
-    //    {
-    //        using_chasingItem = true;
-    //    }
-    //    if (test_double)
-    //    {
-    //        Player.ExplosionRange = 50;
-    //    }
-    //    if (test_leesin)
-    //    {
-    //        nextPlayer.trajectory.isPainted = false;
-    //    }
-
-    //}
 
     // 아이템 슬롯 UI 업데이트
     public void UpdateItemSelectionUI()
@@ -611,17 +758,14 @@ public class PlayerController : MonoBehaviour
     {
         if (statusText != null)
         {
-            // ▼▼▼ [수정] 추적자 모드일 때 상태 텍스트 변경 ▼▼▼
             if (isNextShotChaser)
             {
                 statusText.text = "특수탄: 추적자";
             }
             else
             {
-                // 현재 상태에 맞게 텍스트 복원
                 UpdateUIForState(currentState);
             }
-            // ▲▲▲ [여기까지 수정] ▲▲▲
         }
     }
 
@@ -634,7 +778,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ▼▼▼ [추가됨] 선택한 탄의 타입을 PlayerShooting에 전달하는 함수 ▼▼▼
     public ProjectileType GetSelectedProjectileType()
     {
         if (selectedProjectile != null)
@@ -642,18 +785,14 @@ public class PlayerController : MonoBehaviour
             return selectedProjectile.type;
         }
 
-        // 만약 플레이어가 탄을 선택하지 않았다면 (예: 시간 초과)
-        // 자동으로 선택된(또는 될) 0번 탄의 타입을 반환
         if (currentSelection.Count > 0)
         {
             return currentSelection[0].type;
         }
 
-        // 최악의 경우 (데이터베이스가 비어있는 등)
         Debug.LogError("선택된 포탄이 없으며, 현재 포탄 목록도 비어있습니다. NormalImpact로 대체합니다.");
         return ProjectileType.NormalImpact;
     }
-    // ▲▲▲ [여기까지 추가] ▲▲▲
 }
 
 // 포탄 정보를 담는 클래스

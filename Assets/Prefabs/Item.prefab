@@ -275,6 +275,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemtype: 0
   itemIcon: {fileID: 0}
+  itemCommentary: {fileID: 8300000, guid: e37683a1df0aec044995cebc8bcec3ce, type: 3}
 --- !u!54 &-2922027638079948656
 Rigidbody:
   m_ObjectHideFlags: 0
