@@ -199,7 +199,7 @@ public class Projectile : MonoBehaviour
                     PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
                     if (player != null)
                     {
-                        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                        if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                         {
                             if (gameManager != null && gameManager.announcerAudioSource != null && TerrainPushCommentary != null)
                             {
@@ -222,7 +222,7 @@ public class Projectile : MonoBehaviour
                     PlayerMovement player = hit.GetComponentInParent<PlayerMovement>();
                     if (player != null)
                     {
-                        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                        if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                         {
                             if (gameManager != null && gameManager.announcerAudioSource != null && TerrainPullCommentary != null)
                             {

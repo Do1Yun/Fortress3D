@@ -82,7 +82,7 @@ public class Item : MonoBehaviour
     {
         if (player.ItemList.Count < player.maxItemCount)
         {
-            if (Random.value <= 1.0f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+            if (Random.value <= 0.33f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
             {
                 if (gameManager != null && gameManager.announcerAudioSource != null && itemCommentary != null)
                 {

@@ -122,7 +122,7 @@ public class ChaserDeployerProjectile : MonoBehaviour
         CancelInvoke();
 
         Debug.Log($"추적탄 착지! ({debugReason}) 페이로드를 전개합니다.");
-        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+        if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
         {
             if (gameManager != null && gameManager.announcerAudioSource != null && ChaserStrartCommentary != null)
             {

@@ -156,7 +156,7 @@ public class World : MonoBehaviour
     void PlayTerrainAudio(AudioClip clip)
     {
         // È®·ü Ã¼Å© (100%)
-        if (Random.value <= 1.0f)
+        if (Random.value <= 0.33f)
         {
             if (gameManager != null && gameManager.announcerAudioSource != null && clip != null)
             {

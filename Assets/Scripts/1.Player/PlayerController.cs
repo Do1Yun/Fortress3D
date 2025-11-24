@@ -317,7 +317,7 @@ public class PlayerController : MonoBehaviour
         Debug.Log($"[LOG] Player {playerID}: 이동 시작 상황 발생!"); // 무조건 로그 출력
 
         // 50% 확률로 멘트 재생
-        if (Random.value <= 0f)//확률
+        if (Random.value <= 0.33f)//확률
         {
             // ★★★ StartCoroutine 직접 호출 대신 TriggerCommentary 사용 ★★★
             TriggerCommentary(moveStartCommentary1, moveStartCommentary2);
@@ -400,7 +400,7 @@ public class PlayerController : MonoBehaviour
         {
             case PlayerState.Moving:
                 GenerateProjectileSelection();
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                 {
                     if (gameManager != null && gameManager.announcerAudioSource != null && choiceCommentary != null)
                     {
@@ -428,7 +428,7 @@ public class PlayerController : MonoBehaviour
                 }
                 SetPlayerState(PlayerState.AimingVertical);
                 GameManager.instance.dangtang = false;
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                 {
                     if (gameManager != null && gameManager.announcerAudioSource != null && AimingVerticalCommentary != null)
                     {
@@ -440,7 +440,7 @@ public class PlayerController : MonoBehaviour
                 break;
             case PlayerState.AimingVertical:
                 SetPlayerState(PlayerState.AimingHorizontal);
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                 {
                     if (gameManager != null && gameManager.announcerAudioSource != null && AimingHorizontalCommentary != null)
                     {
@@ -640,7 +640,7 @@ public class PlayerController : MonoBehaviour
         switch (item)
         {
             case ItemType.Health:
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                 {
                     if (gameManager != null && gameManager.announcerAudioSource != null && commentItemstamina != null)
                     {
@@ -655,7 +655,7 @@ public class PlayerController : MonoBehaviour
                 break;
 
             case ItemType.Range:
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                 {
                     if (gameManager != null && gameManager.announcerAudioSource != null && commentItem2x != null)
                     {
@@ -670,7 +670,7 @@ public class PlayerController : MonoBehaviour
                 break;
 
             case ItemType.TurnOff:
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                 {
                     if (gameManager != null && gameManager.announcerAudioSource != null && commentItemTurnOff != null)
                     {
@@ -683,7 +683,7 @@ public class PlayerController : MonoBehaviour
                 nextPlayer.trajectory.isPainted = false;
                 break;
             case ItemType.Chasing:
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
                 {
                     if (gameManager != null && gameManager.announcerAudioSource != null && commentItemChasing != null)
                     {
