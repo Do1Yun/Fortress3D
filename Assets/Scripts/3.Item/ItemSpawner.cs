@@ -50,7 +50,7 @@ public class ItemSpawner : MonoBehaviour
         );
 
         GameObject item = Instantiate(itemPrefab, spawnPos, Quaternion.identity);
-        if (Random.value <= 0.33f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+        if (Random.value <= 0.2f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
         {
             if (gameManager != null && gameManager.announcerAudioSource != null && itemSpawnCommentary != null)
             {

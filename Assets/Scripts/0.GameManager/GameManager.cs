@@ -239,7 +239,7 @@ public class GameManager : MonoBehaviour
         }
         if (!players[1].isInCaptureZone && !players[0].isInCaptureZone)
         {
-            if (Random.value <= 0.33f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+            if (Random.value <= 0.2f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
             {
                 if (announcerAudioSource != null && NpCommentary != null)
                 {
@@ -311,7 +311,7 @@ public class GameManager : MonoBehaviour
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
         Debug.Log($"Player {nextPlayer.playerID}ÀÇ ÅÏ ½ÃÀÛ!");
-        if (Random.value <= 0.33f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+        if (Random.value <= 0.2f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
         {
             if (announcerAudioSource != null && turnCommentary != null)
             {

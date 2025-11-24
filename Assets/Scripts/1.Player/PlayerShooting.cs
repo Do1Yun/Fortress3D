@@ -123,7 +123,7 @@ public class PlayerShooting : MonoBehaviour
         // ▼▼▼ [추가됨] "알" 포탄에 선택한 탄 타입 주입 ▼▼▼
         if (isChaser)
         {
-            if (Random.value <= 0.33f) // 확률 (현재 100%로 설정됨)
+            if (Random.value <= 0.2f) // 확률 (현재 100%로 설정됨)
             {
                 if (gameManager != null && gameManager.announcerAudioSource != null && ChaserCommentary != null)
                 {
