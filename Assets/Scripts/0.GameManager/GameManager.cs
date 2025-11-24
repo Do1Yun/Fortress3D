@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     public List<PlayerController> players;
     public List<PlayerMovement> players_movement;
     public int currentPlayerIndex = 0;
-    [Header("오디오 설정")]
+    [Header("중계 오디오 설정")]
     public AudioSource announcerAudioSource; // 중계 멘트를 재생할 오디오 소스
     public AudioClip openingCommentary1;     // 첫 번째 멘트 파일
     public AudioClip openingCommentary2;     // 두 번째 멘트 파일
@@ -23,6 +23,11 @@ public class GameManager : MonoBehaviour
     public AudioClip pointCommentary;
     public AudioClip p2Commentary;
     public AudioClip NpCommentary;
+
+    [Header("배경음악 오디오 설정")]
+    public AudioSource BGMAudioSource;
+    public AudioClip BGM1;
+    public AudioClip BGM2;
 
     [Header("메인카메라 지정")]
     public CameraController mainCameraController;
@@ -94,6 +99,15 @@ public class GameManager : MonoBehaviour
     void InitializeGame()
     {
         SetGameState(GameState.PreGame);
+
+        // ▼▼▼ [추가됨] 게임 시작 시 BGM1 재생 ▼▼▼
+        if (BGMAudioSource != null && BGM1 != null)
+        {
+            BGMAudioSource.clip = BGM1;
+            BGMAudioSource.loop = true;
+            BGMAudioSource.Play();
+        }
+        // ▲▲▲ [여기까지 추가] ▲▲▲
 
         foreach (var player in players)
         {
@@ -222,7 +236,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-             if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
+            if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
             {
                 score_player2 += 1;
                 if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
@@ -263,7 +277,19 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-         
+
+        // ▼▼▼ [추가됨] 점수 체크 후 BGM 변경 로직 ▼▼▼
+        // 둘 중 한 명이라도 2점 이상이고, 현재 BGM이 이미 BGM2가 아닐 경우에만 변경
+        if ((score_player1 >= 2 || score_player2 >= 2) && BGMAudioSource.clip != BGM2)
+        {
+            if (BGMAudioSource != null && BGM2 != null)
+            {
+                BGMAudioSource.Stop();
+                BGMAudioSource.clip = BGM2;
+                BGMAudioSource.Play();
+            }
+        }
+        // ▲▲▲ [여기까지 추가] ▲▲▲
 
         if ((score_player1 >= WinningScore) || (score_player2 >= WinningScore))
         {
@@ -350,7 +376,7 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    public void OnProjectileFired(Transform projectileTransform) 
+    public void OnProjectileFired(Transform projectileTransform)
     {
         SetGameState(GameState.ProjectileFlying);
 
@@ -372,14 +398,6 @@ public class GameManager : MonoBehaviour
         SwitchToNextTurn();
     }
 
-    public void OnPlayerDied(PlayerController deadPlayer)
-    {
-        if (players.Contains(deadPlayer))
-        {
-            players.Remove(deadPlayer);
-        }
-    }
-
     void Item_Reset()
     {
         players[currentPlayerIndex].trajectory.isPainted = true;
@@ -393,4 +411,3 @@ public class GameManager : MonoBehaviour
         else return false;
     }
 }
-
