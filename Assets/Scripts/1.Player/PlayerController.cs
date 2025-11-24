@@ -319,8 +319,15 @@ public class PlayerController : MonoBehaviour
         // 50% 확률로 멘트 재생
         if (Random.value <= 0.2f)//확률
         {
-            // ★★★ StartCoroutine 직접 호출 대신 TriggerCommentary 사용 ★★★
-            TriggerCommentary(moveStartCommentary1, moveStartCommentary2);
+            if (GameManager.instance.coment == false)
+            {
+                // ★★★ StartCoroutine 직접 호출 대신 TriggerCommentary 사용 ★★★
+                TriggerCommentary(moveStartCommentary1, moveStartCommentary2);
+            }
+            else
+            {
+                GameManager.instance.coment = false;
+            }
         }
         // ▲▲▲ [여기까지 수정] ▲▲▲
     }

@@ -46,6 +46,8 @@ public class GameManager : MonoBehaviour
 
     private bool TurnFlag = false;
     public bool dangtang = false;
+    public bool coment = false;
+
 
 
     public enum GameState
@@ -224,6 +226,7 @@ public class GameManager : MonoBehaviour
                 score_player1 += 1;
                 if (Random.value <= 1.0f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
                 {
+                    coment = true;
                     if (announcerAudioSource != null && pointCommentary != null)
                     {
                         // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ý
@@ -241,6 +244,8 @@ public class GameManager : MonoBehaviour
                 score_player2 += 1;
                 if (Random.value <= 1.0f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
                 {
+                    coment = true;
+
                     if (announcerAudioSource != null && pointCommentary != null)
                     {
                         // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ý
@@ -255,6 +260,8 @@ public class GameManager : MonoBehaviour
         {
             if (Random.value <= 0.2f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
             {
+                coment = true;
+
                 if (announcerAudioSource != null && NpCommentary != null)
                 {
                     // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ý
@@ -268,6 +275,8 @@ public class GameManager : MonoBehaviour
         {
             if (Random.value <= 1.0f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
             {
+                coment = true;
+
                 if (announcerAudioSource != null && p2Commentary != null)
                 {
                     // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ý
@@ -339,11 +348,16 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Player {nextPlayer.playerID}ÀÇ ÅÏ ½ÃÀÛ!");
         if (Random.value <= 0.2f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
         {
-            if (announcerAudioSource != null && turnCommentary != null)
+            if (announcerAudioSource != null && turnCommentary != null && coment == false)
             {
                 // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ý
                 announcerAudioSource.Stop();
                 announcerAudioSource.PlayOneShot(turnCommentary);
+
+            }
+            else
+            {
+                coment = false;
 
             }
         }
