@@ -99,12 +99,9 @@ public class GameManager : MonoBehaviour
             Debug.LogError($"플레이어 수 부족.", this);
             return;
         }
-<<<<<<< Updated upstream
         //SceneManager.LoadScene("GameoverScene");
-=======
         pauseMenuUI.SetActive(false);
 
->>>>>>> Stashed changes
         InitializeGame();
     }
 
