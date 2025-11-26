@@ -96,6 +96,7 @@ public class GameManager : MonoBehaviour
             Debug.LogError($"플레이어 수 부족.", this);
             return;
         }
+        SceneManager.LoadScene("GameoverScene");
         InitializeGame();
     }
 
