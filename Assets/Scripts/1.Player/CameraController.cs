@@ -6,7 +6,7 @@ public class CameraController : MonoBehaviour
 {
     private Transform target;
     private Transform turretToFollow;
-    private PlayerController playerController; // ▼▼▼ [1. PlayerController 변수 추가] ▼▼▼
+    private PlayerController playerController;
 
     [Header("카메라 기본 설정")]
     public CameraModeSettings defaultSettings = new CameraModeSettings { distance = 7.0f, yaw = 0.0f, pitch = 20.0f, lookAtOffset = new Vector3(0, 1.5f, 0) };

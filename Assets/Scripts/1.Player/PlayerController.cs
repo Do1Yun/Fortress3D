@@ -72,9 +72,7 @@ public class PlayerController : MonoBehaviour
 
     private bool hasPlayedStaminaCommentary = false; // 턴 당 1회 재생 체크용
 
-    // ▼▼▼ [추가됨] 현재 재생 중인 멘트 코루틴 추적용 변수 ▼▼▼
     private Coroutine activeCommentaryCoroutine;
-    // ▲▲▲ [여기까지 추가] ▲▲▲
 
     [Header("상태별 시간 제한")]
     public float stageTimeLimit = 5.0f;
@@ -301,7 +299,6 @@ public class PlayerController : MonoBehaviour
         selectedProjectile = null;
         isNextShotChaser = false;
 
-        // ▼▼▼ [수정됨] 턴 시작 초기화 및 이동 시작 멘트 로직 ▼▼▼
         hasPlayedStaminaCommentary = false; // 기동력 소진 멘트 플래그 초기화
 
         if (playerShooting != null)
@@ -321,7 +318,6 @@ public class PlayerController : MonoBehaviour
         {
             if (GameManager.instance.coment == false)
             {
-                // ★★★ StartCoroutine 직접 호출 대신 TriggerCommentary 사용 ★★★
                 TriggerCommentary(moveStartCommentary1, moveStartCommentary2);
             }
             else
@@ -329,10 +325,8 @@ public class PlayerController : MonoBehaviour
                 GameManager.instance.coment = false;
             }
         }
-        // ▲▲▲ [여기까지 수정] ▲▲▲
     }
 
-    // ▼▼▼ [추가됨] 중단 가능한 멘트 재생 함수 (핵심 로직) ▼▼▼
     public void TriggerCommentary(AudioClip clip1, AudioClip clip2)
     {
         // 1. 이미 재생 중인 코루틴이 있다면 강제 중단
@@ -379,21 +373,19 @@ public class PlayerController : MonoBehaviour
         // 재생 완료 후 변수 초기화
         activeCommentaryCoroutine = null;
     }
-    // ▲▲▲ [여기까지 추가] ▲▲▲
 
     // 턴 종료 시 호출되는 함수
     public void EndTurn()
     {
         if (trajectory != null) trajectory.HideTrajectory();
 
-        // ▼▼▼ [추가됨] 턴 종료 시 혹시 재생 중인 멘트가 있다면 정리 ▼▼▼
+        // 턴 종료 시 혹시 재생 중인 멘트가 있다면 정리
         if (activeCommentaryCoroutine != null)
         {
             StopCoroutine(activeCommentaryCoroutine);
             activeCommentaryCoroutine = null;
         }
-        // ▲▲▲ [여기까지 추가] ▲▲▲
-
+        
         SetPlayerState(PlayerState.Waiting);
         Debug.Log($"Player {playerID}의 턴 종료!");
     }

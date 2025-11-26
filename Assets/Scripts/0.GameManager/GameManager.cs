@@ -1,4 +1,4 @@
-// Scripts.zip/GameManager/GameManager.cs
+ï»¿// Scripts.zip/GameManager/GameManager.cs
 
 using System.Collections;
 using System.Collections.Generic;
@@ -14,31 +14,34 @@ public class GameManager : MonoBehaviour
     public List<PlayerController> players;
     public List<PlayerMovement> players_movement;
     public int currentPlayerIndex = 0;
-    [Header("Áß°è ¿Àµğ¿À ¼³Á¤")]
-    public AudioSource announcerAudioSource; // Áß°è ¸àÆ®¸¦ Àç»ıÇÒ ¿Àµğ¿À ¼Ò½º
-    public AudioClip openingCommentary1;     // Ã¹ ¹øÂ° ¸àÆ® ÆÄÀÏ
-    public AudioClip openingCommentary2;     // µÎ ¹øÂ° ¸àÆ® ÆÄÀÏ
+
+    [Header("ì¤‘ê³„ ì˜¤ë””ì˜¤ ì„¤ì •")]
+    public AudioSource announcerAudioSource; // ì¤‘ê³„ ë©˜íŠ¸ë¥¼ ì¬ìƒí•  ì˜¤ë””ì˜¤ ì†ŒìŠ¤
+    public AudioClip openingCommentary1;      // ì²« ë²ˆì§¸ ë©˜íŠ¸ íŒŒì¼
+    public AudioClip openingCommentary2;      // ë‘ ë²ˆì§¸ ë©˜íŠ¸ íŒŒì¼
     public AudioClip closingCommentary;
     public AudioClip turnCommentary;
     public AudioClip pointCommentary;
     public AudioClip p2Commentary;
     public AudioClip NpCommentary;
 
-    [Header("¹è°æÀ½¾Ç ¿Àµğ¿À ¼³Á¤")]
+    [Header("ë°°ê²½ìŒì•… ì˜¤ë””ì˜¤ ì„¤ì •")]
     public AudioSource BGMAudioSource;
     public AudioClip BGM1;
     public AudioClip BGM2;
 
-    [Header("¸ŞÀÎÄ«¸Ş¶ó ÁöÁ¤")]
+    [Header("ë©”ì¸ì¹´ë©”ë¼ ì§€ì •")]
     public CameraController mainCameraController;
     public GameObject MGCamera;
     public ProjectileFollowCamera projectileCam;
 
-    [Header("UI ¿¬°á")]
+    [Header("UI ì—°ê²°")]
     public TextMeshProUGUI turnDisplayText;
     public GameObject compass;
+    public GameObject pauseMenuUI;
+    public GameObject darkBackground;
 
-    [Header("ÇÃ·¹ÀÌ¾î ¼ö,½ºÄÚ¾î")]
+    [Header("í”Œë ˆì´ì–´ ìˆ˜,ìŠ¤ì½”ì–´")]
     public int minPlayersForGame = 2;
     public int score_player1 = 0, score_player2 = 0;
     public int WinningScore = 3;
@@ -48,7 +51,7 @@ public class GameManager : MonoBehaviour
     public bool dangtang = false;
     public bool coment = false;
 
-
+    bool isPaused = false;
 
     public enum GameState
     {
@@ -93,25 +96,62 @@ public class GameManager : MonoBehaviour
     {
         if (players == null || players.Count < minPlayersForGame)
         {
-            Debug.LogError($"ÇÃ·¹ÀÌ¾î ¼ö ºÎÁ·.", this);
+            Debug.LogError($"í”Œë ˆì´ì–´ ìˆ˜ ë¶€ì¡±.", this);
             return;
         }
+<<<<<<< Updated upstream
         //SceneManager.LoadScene("GameoverScene");
+=======
+        pauseMenuUI.SetActive(false);
+
+>>>>>>> Stashed changes
         InitializeGame();
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            // ê²Œì„ ì˜¤ë²„ ìƒíƒœê°€ ì•„ë‹ ë•Œë§Œ ì¼ì‹œì •ì§€ë¥¼ í† ê¸€í•©ë‹ˆë‹¤.
+            if (currentState != GameState.GameOver)
+            {
+                Pause();
+            }
+        }
+    }
+
+    public void Pause()
+    {
+        isPaused = !isPaused;
+
+        if (isPaused)
+        {
+            // ì¼ì‹œì •ì§€: Time.timeScaleì„ 0ìœ¼ë¡œ ì„¤ì •
+            Time.timeScale = 0f;
+            Debug.Log("ê²Œì„ ì¼ì‹œì •ì§€");
+            if (pauseMenuUI != null) pauseMenuUI.SetActive(true);
+            if (darkBackground != null) darkBackground.SetActive(true);
+        }
+        else
+        {
+            // ì¬ê°œ: Time.timeScaleì„ 1(ì •ìƒ)ë¡œ ë³µì›
+            Time.timeScale = 1f;
+            Debug.Log("ê²Œì„ ì¬ê°œ");
+            if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
+            if (darkBackground != null) darkBackground.SetActive(false);
+        }
     }
 
     void InitializeGame()
     {
         SetGameState(GameState.PreGame);
 
-        // ¡å¡å¡å [Ãß°¡µÊ] °ÔÀÓ ½ÃÀÛ ½Ã BGM1 Àç»ı ¡å¡å¡å
         if (BGMAudioSource != null && BGM1 != null)
         {
             BGMAudioSource.clip = BGM1;
             BGMAudioSource.loop = true;
             BGMAudioSource.Play();
         }
-        // ¡ã¡ã¡ã [¿©±â±îÁö Ãß°¡] ¡ã¡ã¡ã
 
         foreach (var player in players)
         {
@@ -123,15 +163,15 @@ public class GameManager : MonoBehaviour
 
     IEnumerator PlayOpeningCommentarySequence()
     {
-        // Ã¹ ¹øÂ° ¸àÆ® Àç»ı
+        // ì²« ë²ˆì§¸ ë©˜íŠ¸ ì¬ìƒ
         if (announcerAudioSource != null && openingCommentary1 != null)
         {
             announcerAudioSource.PlayOneShot(openingCommentary1);
-            // ¸àÆ® ±æÀÌ¸¸Å­ ´ë±â (ÀÌ ÄÚ·çÆ¾¸¸ ´ë±âÇÏ°í, ¸ŞÀÎ °ÔÀÓ Èå¸§Àº ¸ØÃßÁö ¾ÊÀ½)
+            // ë©˜íŠ¸ ê¸¸ì´ë§Œí¼ ëŒ€ê¸° (ì´ ì½”ë£¨í‹´ë§Œ ëŒ€ê¸°í•˜ê³ , ë©”ì¸ ê²Œì„ íë¦„ì€ ë©ˆì¶”ì§€ ì•ŠìŒ)
             yield return new WaitForSecondsRealtime(openingCommentary1.length);
         }
 
-        // µÎ ¹øÂ° ¸àÆ® Àç»ı
+        // ë‘ ë²ˆì§¸ ë©˜íŠ¸ ì¬ìƒ
         if (announcerAudioSource != null && openingCommentary2 != null)
         {
             announcerAudioSource.PlayOneShot(openingCommentary2);
@@ -141,7 +181,7 @@ public class GameManager : MonoBehaviour
     IEnumerator StartGameAfterDelay(float delay)
     {
 
-        //// ------------------------------------ ¿ì´çÅÁÅÁ ½ºÅµ ¤·¤·------------------------------------ 
+        //// ------------------------------------ ìš°ë‹¹íƒ•íƒ• ìŠ¤í‚µ ã…‡ã…‡------------------------------------ 
         //dangtang = true;
         //SetGameState(GameState.MakeGround);
         //compass.SetActive(false);
@@ -150,33 +190,33 @@ public class GameManager : MonoBehaviour
         //    mainCameraController.SetCamera(MGCamera.transform);
         //}
         //StartCoroutine(PlayOpeningCommentarySequence());
-        //// ¡å¡å¡å [Ãß°¡µÊ] '¿ì´çÅÁÅÁ' Áß ÅÏ ÅØ½ºÆ® º¯°æ ¡å¡å¡å
+        //// â–¼â–¼â–¼ [ì¶”ê°€ë¨] 'ìš°ë‹¹íƒ•íƒ•' ì¤‘ í„´ í…ìŠ¤íŠ¸ ë³€ê²½ â–¼â–¼â–¼
         //if (turnDisplayText != null)
         //{
-        //    turnDisplayText.text = "ÀüÅõ ÁØºñ!";
+        //    turnDisplayText.text = "ì „íˆ¬ ì¤€ë¹„!";
         //}
-        //// ¡ã¡ã¡ã [¿©±â±îÁö Ãß°¡] ¡ã¡ã¡ã
+        //// â–²â–²â–² [ì—¬ê¸°ê¹Œì§€ ì¶”ê°€] â–²â–²â–²
 
-        //// ¸ğµç ÇÃ·¹ÀÌ¾î°¡ ¼ø¼­´ë·Î '¿ì´çÅÁÅÁ'À» ÁøÇàÇÕ´Ï´Ù.
+        //// ëª¨ë“  í”Œë ˆì´ì–´ê°€ ìˆœì„œëŒ€ë¡œ 'ìš°ë‹¹íƒ•íƒ•'ì„ ì§„í–‰í•©ë‹ˆë‹¤.
         //foreach (var player in players)
         //{
         //    player.MakeGround();
-        //    // ¡Ú¡Ú¡Ú [¼öÁ¤µÊ] ºÒ¾ÈÁ¤ÇÑ WaitWhile ´ë½Å, °¢ ÇÃ·¹ÀÌ¾îÀÇ MakingGroundTime ¸¸Å­ ¸í½ÃÀûÀ¸·Î ±â´Ù¸³´Ï´Ù. ¡Ú¡Ú¡Ú
+        //    // â˜…â˜…â˜… [ìˆ˜ì •ë¨] ë¶ˆì•ˆì •í•œ WaitWhile ëŒ€ì‹ , ê° í”Œë ˆì´ì–´ì˜ MakingGroundTime ë§Œí¼ ëª…ì‹œì ìœ¼ë¡œ ê¸°ë‹¤ë¦½ë‹ˆë‹¤. â˜…â˜…â˜…
         //    yield return new WaitForSeconds(player.MakingGroundTime);
-        //    yield return new WaitForSeconds(delay / 2); // °¢ ÅÏ »çÀÌ¿¡ ÂªÀº µô·¹ÀÌ
+        //    yield return new WaitForSeconds(delay / 2); // ê° í„´ ì‚¬ì´ì— ì§§ì€ ë”œë ˆì´
         //}
 
         //if (announcerAudioSource != null && closingCommentary != null)
         //{
-        //    announcerAudioSource.Stop(); // È¤½Ã ¿ÀÇÁ´× ¸àÆ®°¡ ³²¾Ò´Ù¸é ÁßÁö
+        //    announcerAudioSource.Stop(); // í˜¹ì‹œ ì˜¤í”„ë‹ ë©˜íŠ¸ê°€ ë‚¨ì•˜ë‹¤ë©´ ì¤‘ì§€
         //    announcerAudioSource.PlayOneShot(closingCommentary);
         //}
         //compass.SetActive(true);
 
 
-        // ------------------------------------ ¿ì´çÅÁÅÁ ½ºÅµ ¤·¤·------------------------------------ 
+        // ------------------------------------ ìš°ë‹¹íƒ•íƒ• ìŠ¤í‚µ ã…‡ã…‡------------------------------------ 
 
-        // '¿ì´çÅÁÅÁ' Á¾·á ÈÄ Ã¹ ¹øÂ° ÇÃ·¹ÀÌ¾îÀÇ ÅÏÀ» ½ÃÀÛÇÕ´Ï´Ù.
+        // 'ìš°ë‹¹íƒ•íƒ•' ì¢…ë£Œ í›„ ì²« ë²ˆì§¸ í”Œë ˆì´ì–´ì˜ í„´ì„ ì‹œì‘í•©ë‹ˆë‹¤.
 
         PlayerController firstPlayer = players[currentPlayerIndex];
         if (mainCameraController != null)
@@ -195,7 +235,7 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);
-        Debug.Log($"Player {firstPlayer.playerID}ÀÇ ÅÏ ½ÃÀÛ!");
+        Debug.Log($"Player {firstPlayer.playerID}ì˜ í„´ ì‹œì‘!");
     }
 
     public void SetGameState(GameState newState)
@@ -220,18 +260,18 @@ public class GameManager : MonoBehaviour
             OnTurnEnd.Invoke(previousPlayer.playerID);
         }
 
-        // Á¡·É½Ã Á¡¼ö È¹µæ
+        // ì ë ¹ì‹œ ì ìˆ˜ íšë“
         if (TurnFlag)
         {
             if (players[0].isInCaptureZone && !players[1].isInCaptureZone)
             {
                 score_player1 += 1;
-                if (Random.value <= 1.0f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+                if (Random.value <= 1.0f) // í™•ë¥  (í˜„ì¬ 100%ë¡œ ì„¤ì •ë¨)
                 {
                     coment = true;
                     if (announcerAudioSource != null && pointCommentary != null)
                     {
-                        // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ı
+                        // ê¸°ì¡´ ë©˜íŠ¸ê°€ ìˆë‹¤ë©´ ëŠê³ , ì•„ì´í…œ ë©˜íŠ¸ë¥¼ ì¦‰ì‹œ ì¬ìƒ
                         announcerAudioSource.Stop();
                         announcerAudioSource.PlayOneShot(pointCommentary);
 
@@ -244,13 +284,13 @@ public class GameManager : MonoBehaviour
             if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
             {
                 score_player2 += 1;
-                if (Random.value <= 1.0f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+                if (Random.value <= 1.0f) // í™•ë¥  (í˜„ì¬ 100%ë¡œ ì„¤ì •ë¨)
                 {
                     coment = true;
 
                     if (announcerAudioSource != null && pointCommentary != null)
                     {
-                        // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ı
+                        // ê¸°ì¡´ ë©˜íŠ¸ê°€ ìˆë‹¤ë©´ ëŠê³ , ì•„ì´í…œ ë©˜íŠ¸ë¥¼ ì¦‰ì‹œ ì¬ìƒ
                         announcerAudioSource.Stop();
                         announcerAudioSource.PlayOneShot(pointCommentary);
 
@@ -260,13 +300,13 @@ public class GameManager : MonoBehaviour
         }
         if (!players[1].isInCaptureZone && !players[0].isInCaptureZone)
         {
-            if (Random.value <= 0.2f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+            if (Random.value <= 0.2f) // í™•ë¥  
             {
                 coment = true;
 
                 if (announcerAudioSource != null && NpCommentary != null)
                 {
-                    // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ı
+                    // ê¸°ì¡´ ë©˜íŠ¸ê°€ ìˆë‹¤ë©´ ëŠê³ , ì•„ì´í…œ ë©˜íŠ¸ë¥¼ ì¦‰ì‹œ ì¬ìƒ
                     announcerAudioSource.Stop();
                     announcerAudioSource.PlayOneShot(NpCommentary);
 
@@ -275,13 +315,13 @@ public class GameManager : MonoBehaviour
         }
         if (players[1].isInCaptureZone && players[0].isInCaptureZone)
         {
-            if (Random.value <= 1.0f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+            if (Random.value <= 1.0f) // í™•ë¥  (í˜„ì¬ 100%ë¡œ ì„¤ì •ë¨)
             {
                 coment = true;
 
                 if (announcerAudioSource != null && p2Commentary != null)
                 {
-                    // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ı
+                    // ê¸°ì¡´ ë©˜íŠ¸ê°€ ìˆë‹¤ë©´ ëŠê³ , ì•„ì´í…œ ë©˜íŠ¸ë¥¼ ì¦‰ì‹œ ì¬ìƒ
                     announcerAudioSource.Stop();
                     announcerAudioSource.PlayOneShot(p2Commentary);
 
@@ -289,8 +329,8 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // ¡å¡å¡å [Ãß°¡µÊ] Á¡¼ö Ã¼Å© ÈÄ BGM º¯°æ ·ÎÁ÷ ¡å¡å¡å
-        // µÑ Áß ÇÑ ¸íÀÌ¶óµµ 2Á¡ ÀÌ»óÀÌ°í, ÇöÀç BGMÀÌ ÀÌ¹Ì BGM2°¡ ¾Æ´Ò °æ¿ì¿¡¸¸ º¯°æ
+        // â–¼â–¼â–¼ [ì¶”ê°€ë¨] ì ìˆ˜ ì²´í¬ í›„ BGM ë³€ê²½ ë¡œì§ â–¼â–¼â–¼
+        // ë‘˜ ì¤‘ í•œ ëª…ì´ë¼ë„ 2ì  ì´ìƒì´ê³ , í˜„ì¬ BGMì´ ì´ë¯¸ BGM2ê°€ ì•„ë‹ ê²½ìš°ì—ë§Œ ë³€ê²½
         if ((score_player1 >= 2 || score_player2 >= 2) && BGMAudioSource.clip != BGM2)
         {
             if (BGMAudioSource != null && BGM2 != null)
@@ -300,15 +340,15 @@ public class GameManager : MonoBehaviour
                 BGMAudioSource.Play();
             }
         }
-        // ¡ã¡ã¡ã [¿©±â±îÁö Ãß°¡] ¡ã¡ã¡ã
+        // â–²â–²â–² [ì—¬ê¸°ê¹Œì§€ ì¶”ê°€] â–²â–²â–²
 
         if (score_player1 >= WinningScore || score_player2 >= WinningScore)
         {
-            Debug.Log($"Player{(currentPlayerIndex + 1)%2} Win ! \nGameover!");
+            Debug.Log($"Player{(currentPlayerIndex + 1) % 2} Win ! \nGameover!");
             SceneManager.LoadScene("GameoverScene");
         }
 
-        Item_Reset(); // ¾ÆÀÌÅÛ ¿µÇâ ÃÊ±âÈ­
+        Item_Reset(); // ì•„ì´í…œ ì˜í–¥ ì´ˆê¸°í™”
 
         currentPlayerIndex++;
         if (currentPlayerIndex >= players.Count)
@@ -347,12 +387,12 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
-        Debug.Log($"Player {nextPlayer.playerID}ÀÇ ÅÏ ½ÃÀÛ!");
-        if (Random.value <= 0.2f) // È®·ü (ÇöÀç 100%·Î ¼³Á¤µÊ)
+        Debug.Log($"Player {nextPlayer.playerID}ì˜ í„´ ì‹œì‘!");
+        if (Random.value <= 0.2f) // í™•ë¥  
         {
             if (announcerAudioSource != null && turnCommentary != null && coment == false)
             {
-                // ±âÁ¸ ¸àÆ®°¡ ÀÖ´Ù¸é ²÷°í, ¾ÆÀÌÅÛ ¸àÆ®¸¦ Áï½Ã Àç»ı
+                // ê¸°ì¡´ ë©˜íŠ¸ê°€ ìˆë‹¤ë©´ ëŠê³ , ì•„ì´í…œ ë©˜íŠ¸ë¥¼ ì¦‰ì‹œ ì¬ìƒ
                 announcerAudioSource.Stop();
                 announcerAudioSource.PlayOneShot(turnCommentary);
 
