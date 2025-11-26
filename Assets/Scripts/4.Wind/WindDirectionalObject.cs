@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using TMPro;
 public class WindDirectionalObject : MonoBehaviour
 {
     // 이 3D 모델이 바람을 따라 회전할 때,
@@ -21,6 +21,10 @@ public class WindDirectionalObject : MonoBehaviour
     [Tooltip("메인 카메라의 Transform을 할당하여 시점에 따라 회전하도록 합니다.")]
     [SerializeField] private Transform mainCameraTransform;
 
+    [Header("UI 표시 설정")]
+    [Tooltip("바람 세기를 표시할 TextMeshProUGUI를 연결하세요.")]
+    public TextMeshProUGUI windStrengthText;
+
     private Renderer modelRenderer;
 
     private void Awake()
@@ -39,6 +43,7 @@ public class WindDirectionalObject : MonoBehaviour
             RotateTowardsWindDirection();
             ColorByWindStrength();
         }
+        UpdateWindStrengthText();
     }
 
     private void RotateTowardsWindDirection()
@@ -74,5 +79,16 @@ public class WindDirectionalObject : MonoBehaviour
         Color targetColor = Color.Lerp(minColor, maxColor, normalizedStrength);
 
         modelRenderer.material.color = Color.Lerp(modelRenderer.material.color, targetColor, Time.deltaTime * colorChangeSpeed);
+    }
+    private void UpdateWindStrengthText()
+    {
+        if (windStrengthText != null)
+        {
+            float strength = WindController.instance.CurrentWindStrength;
+
+           
+
+            windStrengthText.text = $"{strength:F1} m/s";
+        }
     }
 }
