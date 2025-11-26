@@ -141,36 +141,36 @@ public class GameManager : MonoBehaviour
     {
 
         //// ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
-        dangtang = true;
-        SetGameState(GameState.MakeGround);
-        compass.SetActive(false);
-        if (mainCameraController != null)
-        {
-            mainCameraController.SetCamera(MGCamera.transform);
-        }
-        StartCoroutine(PlayOpeningCommentarySequence());
-        // ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
-        if (turnDisplayText != null)
-        {
-            turnDisplayText.text = "전투 준비!";
-        }
-        // ▲▲▲ [여기까지 추가] ▲▲▲
+        //dangtang = true;
+        //SetGameState(GameState.MakeGround);
+        //compass.SetActive(false);
+        //if (mainCameraController != null)
+        //{
+        //    mainCameraController.SetCamera(MGCamera.transform);
+        //}
+        //StartCoroutine(PlayOpeningCommentarySequence());
+        //// ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
+        //if (turnDisplayText != null)
+        //{
+        //    turnDisplayText.text = "전투 준비!";
+        //}
+        //// ▲▲▲ [여기까지 추가] ▲▲▲
 
-        // 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
-        foreach (var player in players)
-        {
-            player.MakeGround();
-            // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
-            yield return new WaitForSeconds(player.MakingGroundTime);
-            yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
-        }
+        //// 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
+        //foreach (var player in players)
+        //{
+        //    player.MakeGround();
+        //    // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
+        //    yield return new WaitForSeconds(player.MakingGroundTime);
+        //    yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
+        //}
 
-        if (announcerAudioSource != null && closingCommentary != null)
-        {
-            announcerAudioSource.Stop(); // 혹시 오프닝 멘트가 남았다면 중지
-            announcerAudioSource.PlayOneShot(closingCommentary);
-        }
-        compass.SetActive(true);
+        //if (announcerAudioSource != null && closingCommentary != null)
+        //{
+        //    announcerAudioSource.Stop(); // 혹시 오프닝 멘트가 남았다면 중지
+        //    announcerAudioSource.PlayOneShot(closingCommentary);
+        //}
+        //compass.SetActive(true);
 
 
         // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 

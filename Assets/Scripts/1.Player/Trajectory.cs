@@ -67,24 +67,24 @@ public class Trajectory : MonoBehaviour
         Vector3 gravity = Physics.gravity;
         Vector3 windForce = Vector3.zero;
 
-        if (WindController.instance != null)
-        {
-            float projectileMass = 1.0f;
-            GameObject currentPrefab = playerShooting.GetCurrentProjectilePrefab();
-            if (currentPrefab != null)
-            {
-                Rigidbody projRb = currentPrefab.GetComponent<Rigidbody>();
-                if (projRb != null)
-                {
-                    projectileMass = projRb.mass;
-                }
-            }
-            if (projectileMass > 0)
-            {
-                Vector3 windVector = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
-                windForce = windVector / projectileMass;
-            }
-        }
+        //if (WindController.instance != null)
+        //{
+        //    float projectileMass = 1.0f;
+        //    GameObject currentPrefab = playerShooting.GetCurrentProjectilePrefab();
+        //    if (currentPrefab != null)
+        //    {
+        //        Rigidbody projRb = currentPrefab.GetComponent<Rigidbody>();
+        //        if (projRb != null)
+        //        {
+        //            projectileMass = projRb.mass;
+        //        }
+        //    }
+        //    if (projectileMass > 0)
+        //    {
+        //        Vector3 windVector = WindController.instance.CurrentWindDirection * WindController.instance.CurrentWindStrength;
+        //        windForce = windVector / projectileMass;
+        //    }
+        //}
 
         Vector3 totalAcceleration = gravity + windForce;
 

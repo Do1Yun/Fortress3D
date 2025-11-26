@@ -44,19 +44,30 @@ public class WindController : MonoBehaviour
 
     public void ChangeWind()
     {
-        if (gameManager.isMGTime()) return; // 우당탕탕일때는 생성 X
+        if (gameManager.isMGTime()) return;
 
-        // 1. 일단 완전 3D 랜덤 방향을 생성합니다.
-        Vector3 randomDirection = Random.onUnitSphere;
+       
+        Vector2 horizontalDir = Random.insideUnitCircle.normalized;
 
-        // 2. Y축(수직) 방향의 힘을 verticalWindFactor 값만큼 줄여줍니다.
-        randomDirection.y *= verticalWindFactor;
+        
+        float randomY = Random.Range(-1f, 1f) * verticalWindFactor;
 
-        // 3. 방향 벡터의 전체 길이를 다시 1로 정규화하여 순수한 방향으로 만듭니다.
-        CurrentWindDirection = randomDirection.normalized;
+       
+        CurrentWindDirection = new Vector3(horizontalDir.x, randomY, horizontalDir.y).normalized;
 
         CurrentWindStrength = Random.Range(minWindStrength, maxWindStrength);
 
-        Debug.Log($" 턴 변경! 새로운 바람 발생! 방향: {CurrentWindDirection}, 세기: {CurrentWindStrength:F1}");
+       
+        float gravityForce = 9.81f; 
+        float verticalForce = CurrentWindDirection.y * CurrentWindStrength;
+
+        // 상승 풍력이 중력의 80%를 넘으면 바람 세기를 줄임 
+        if (verticalForce > gravityForce * 0.8f)
+        {
+            float reductionRatio = (gravityForce * 0.8f) / verticalForce;
+            CurrentWindStrength *= reductionRatio;
+        }
+
+        Debug.Log($"턴 변경! 바람: {CurrentWindDirection}, 세기: {CurrentWindStrength:F1}");
     }
 }
