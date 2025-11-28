@@ -715,7 +715,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainVideoPlayer: {fileID: 345530682}
   videoClips:
-  - {fileID: 0}
+  - {fileID: 32900000, guid: 4058e4ac646615b4e8afcc9f46ba736b, type: 3}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
