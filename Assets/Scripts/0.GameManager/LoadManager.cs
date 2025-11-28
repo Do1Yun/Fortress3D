@@ -22,6 +22,15 @@ public class LoadManager : MonoBehaviour
     {
         SceneManager.LoadScene("SettingScene");
     }
+    public void inplay_SettingScene()
+    {
+        SceneManager.LoadScene("SettingScene2");
+    }
+
+    public void BacktoGame()
+    {
+        SceneManager.LoadScene("SettingScene");
+    }
     public void Exit()
     {
         Application.Quit();
