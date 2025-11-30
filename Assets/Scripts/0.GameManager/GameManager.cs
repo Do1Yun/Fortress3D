@@ -247,6 +247,15 @@ public class GameManager : MonoBehaviour
 
         // ------------------------------------ 게임 시작 ------------------------------------ 
 
+        dangtang = false; // 우당탕탕 종료
+
+        SetGameState(GameState.TurnEnd);
+
+        if (WindController.instance != null)
+        {
+            WindController.instance.ChangeWind(); // 바람 다시 생성 (무작위)
+        }
+
         PlayerController firstPlayer = players[currentPlayerIndex];
         if (mainCameraController != null)
         {
@@ -505,12 +514,11 @@ public class GameManager : MonoBehaviour
         TurnFlag = !TurnFlag;
     }
 
-    // ★ [수정됨] 이 함수에서 firstPlayer를 쓰면 안 됩니다! nextPlayer로 수정했습니다.
     IEnumerator StartNextTurnWithDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
 
-        PlayerController nextPlayer = players[currentPlayerIndex]; // 여기서는 nextPlayer를 씁니다.
+        PlayerController nextPlayer = players[currentPlayerIndex];
         nextPlayer.StartTurn();
 
         if (mainCameraController != null)
@@ -525,7 +533,7 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
-        Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!"); // firstPlayer -> nextPlayer 수정됨
+        Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!");
         if (Random.value <= 0.2f)
         {
             if (announcerAudioSource != null && turnCommentary != null && coment == false)
