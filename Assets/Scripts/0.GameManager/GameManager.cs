@@ -1,6 +1,4 @@
-﻿// Scripts.zip/GameManager/GameManager.cs
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -25,6 +23,10 @@ public class GameManager : MonoBehaviour
     public AudioClip p2Commentary;
     public AudioClip NpCommentary;
 
+    [Header("룰렛 연출 오디오 (추가됨)")]
+    public AudioClip rouletteSpinSFX;   // 룰렛 돌아가는 소리 (틱, 틱, 틱)
+    public AudioClip rouletteDecideSFX; // 룰렛 결정 소리 (탁!)
+
     [Header("배경음악 오디오 설정")]
     public AudioSource BGMAudioSource;
     public AudioClip BGM1;
@@ -36,14 +38,19 @@ public class GameManager : MonoBehaviour
     public ProjectileFollowCamera projectileCam;
 
     [Header("UI 연결")]
-    public TextMeshProUGUI turnDisplayText;
-    public GameObject compass;
+    public TextMeshProUGUI turnDisplayText; // 기존 턴 표시 텍스트
+    public TextMeshProUGUI rouletteResultText; // 룰렛 전용 텍스트
     public GameObject pauseMenuUI;
     public GameObject darkBackground;
 
-    [Header("점수 UI 연결")] // ★ 추가됨
+    [Header("점수 UI 연결")]
     public TextMeshProUGUI scoreTextP1;
     public TextMeshProUGUI scoreTextP2;
+
+    [Header("진행 제어 UI")]
+    public GameObject nextPhaseButton; // '다음' 또는 '게임 시작' 버튼
+    public GameObject gameOverPanel;   // 게임 오버 패널
+    public TextMeshProUGUI winnerText; // 승리자 텍스트
 
     [Header("플레이어 수,스코어")]
     public int minPlayersForGame = 2;
@@ -54,6 +61,9 @@ public class GameManager : MonoBehaviour
     private bool TurnFlag = false;
     public bool dangtang = false;
     public bool coment = false;
+
+    // 버튼 입력을 기다리기 위한 플래그
+    private bool isPhaseReady = false;
 
     bool isPaused = false;
 
@@ -103,12 +113,16 @@ public class GameManager : MonoBehaviour
             Debug.LogError($"플레이어 수 부족.", this);
             return;
         }
-        //SceneManager.LoadScene("GameoverScene");
+
         if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
 
-        InitializeGame();
+        if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
-        // ★ 게임 시작 시 점수 UI 초기화
+        // 룰렛 텍스트 초기화 (숨김)
+        if (rouletteResultText != null) rouletteResultText.gameObject.SetActive(false);
+
+        InitializeGame();
         UpdateScoreUI();
     }
 
@@ -116,7 +130,6 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            // 게임 오버 상태가 아닐 때만 일시정지를 토글합니다.
             if (currentState != GameState.GameOver)
             {
                 Pause();
@@ -130,17 +143,13 @@ public class GameManager : MonoBehaviour
 
         if (isPaused)
         {
-            // 일시정지: Time.timeScale을 0으로 설정
             Time.timeScale = 0f;
-            Debug.Log("게임 일시정지");
             if (pauseMenuUI != null) pauseMenuUI.SetActive(true);
             if (darkBackground != null) darkBackground.SetActive(true);
         }
         else
         {
-            // 재개: Time.timeScale을 1(정상)로 복원
             Time.timeScale = 1f;
-            Debug.Log("게임 재개");
             if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
             if (darkBackground != null) darkBackground.SetActive(false);
         }
@@ -167,62 +176,78 @@ public class GameManager : MonoBehaviour
 
     IEnumerator PlayOpeningCommentarySequence()
     {
-        // 첫 번째 멘트 재생
         if (announcerAudioSource != null && openingCommentary1 != null)
         {
             announcerAudioSource.PlayOneShot(openingCommentary1);
-            // 멘트 길이만큼 대기 (이 코루틴만 대기하고, 메인 게임 흐름은 멈추지 않음)
             yield return new WaitForSecondsRealtime(openingCommentary1.length);
         }
 
-        // 두 번째 멘트 재생
         if (announcerAudioSource != null && openingCommentary2 != null)
         {
             announcerAudioSource.PlayOneShot(openingCommentary2);
             yield return new WaitForSecondsRealtime(openingCommentary2.length);
         }
     }
+
     IEnumerator StartGameAfterDelay(float delay)
     {
-
-        // ------------------------------------ 우당탕탕 스킵 ㅇㅇ------------------------------------ 
+        // ------------------------------------ 우당탕탕 (Make Ground) ------------------------------------ 
         dangtang = true;
         SetGameState(GameState.MakeGround);
-        compass.SetActive(false);
+
+        if (WindController.instance != null)
+        {
+            WindController.instance.ResetWind();
+        }
+
         if (mainCameraController != null)
         {
             mainCameraController.SetCamera(MGCamera.transform);
         }
         StartCoroutine(PlayOpeningCommentarySequence());
-        // ▼▼▼ [추가됨] '우당탕탕' 중 턴 텍스트 변경 ▼▼▼
+
         if (turnDisplayText != null)
         {
             turnDisplayText.text = "전투 준비!";
         }
-        // ▲▲▲ [여기까지 추가] ▲▲▲
 
-        // 모든 플레이어가 순서대로 '우당탕탕'을 진행합니다.
+        // 각 플레이어 우당탕탕 진행
         foreach (var player in players)
         {
+            if (nextPhaseButton != null)
+            {
+                nextPhaseButton.SetActive(true);
+                TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (btnText != null) btnText.text = $"P{player.playerID + 1} 준비";
+            }
+
+            isPhaseReady = false;
+            yield return new WaitUntil(() => isPhaseReady);
+
+            if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
+
             player.MakeGround();
-            // ★★★ [수정됨] 불안정한 WaitWhile 대신, 각 플레이어의 MakingGroundTime 만큼 명시적으로 기다립니다. ★★★
+
             yield return new WaitForSeconds(player.MakingGroundTime);
-            yield return new WaitForSeconds(delay / 2); // 각 턴 사이에 짧은 딜레이
+
+            yield return new WaitForSeconds(delay / 2);
         }
 
         if (announcerAudioSource != null && closingCommentary != null)
         {
-            announcerAudioSource.Stop(); // 혹시 오프닝 멘트가 남았다면 중지
+            announcerAudioSource.Stop();
             announcerAudioSource.PlayOneShot(closingCommentary);
         }
-        compass.SetActive(true);
+
+        // ------------------------------------ 룰렛 및 진영 결정 ------------------------------------ 
+
+        // 룰렛 코루틴 호출
+        yield return StartCoroutine(PositionSwapRoulette());
 
 
-        //------------------------------------우당탕탕 스킵 ㅇㅇ------------------------------------
+        // ------------------------------------ 게임 시작 ------------------------------------ 
 
-      // '우당탕탕' 종료 후 첫 번째 플레이어의 턴을 시작합니다.
-
-      PlayerController firstPlayer = players[currentPlayerIndex];
+        PlayerController firstPlayer = players[currentPlayerIndex];
         if (mainCameraController != null)
         {
             mainCameraController.SetTarget(firstPlayer.transform);
@@ -240,6 +265,126 @@ public class GameManager : MonoBehaviour
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);
         Debug.Log($"Player {firstPlayer.playerID}의 턴 시작!");
+    }
+
+    // 룰렛 연출 및 위치 스왑 로직
+    IEnumerator PositionSwapRoulette()
+    {
+        bool doSwap = (players.Count >= 2 && Random.value <= 0.5f);
+
+        float duration = 2.5f;
+        float timer = 0f;
+        float interval = 0.1f;
+        bool toggle = false;
+
+        if (rouletteResultText != null)
+        {
+            rouletteResultText.gameObject.SetActive(true);
+        }
+
+        while (timer < duration)
+        {
+            toggle = !toggle;
+
+            if (rouletteResultText != null)
+            {
+                if (toggle)
+                    rouletteResultText.text = "진영 유지\n<size=80%>Position KEEP</size>";
+                else
+                    rouletteResultText.text = "진영 교체\n<size=80%>Position SWAP</size>";
+            }
+
+            if (announcerAudioSource != null && rouletteSpinSFX != null)
+            {
+                announcerAudioSource.PlayOneShot(rouletteSpinSFX);
+            }
+
+            yield return new WaitForSeconds(interval);
+
+            timer += interval;
+            interval += 0.02f;
+        }
+
+        if (announcerAudioSource != null && rouletteDecideSFX != null)
+        {
+            announcerAudioSource.PlayOneShot(rouletteDecideSFX);
+        }
+
+        if (doSwap)
+        {
+            if (rouletteResultText != null)
+                rouletteResultText.text = "<color=red>진영 교체\n<size=80%>Position SWAP</size></color>";
+
+            Debug.Log("⚡ 룰렛 결과: 진영 교체!");
+        }
+        else
+        {
+            if (rouletteResultText != null)
+                rouletteResultText.text = "<color=blue>진영 유지\n<size=80%>Position KEEP</size></color>";
+
+            Debug.Log("⚡ 룰렛 결과: 위치 유지");
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        // 위치 변경 로직 (CharacterController 처리 포함)
+        if (doSwap)
+        {
+            // 1. CharacterController 비활성화
+            CharacterController cc1 = players[0].GetComponent<CharacterController>();
+            CharacterController cc2 = players[1].GetComponent<CharacterController>();
+
+            if (cc1 != null) cc1.enabled = false;
+            if (cc2 != null) cc2.enabled = false;
+
+            // 2. 위치 스왑
+            Vector3 tempPos = players[0].transform.position;
+            players[0].transform.position = players[1].transform.position;
+            players[1].transform.position = tempPos;
+
+            // 3. 180도 회전
+            players[0].transform.Rotate(0, 180f, 0);
+            players[1].transform.Rotate(0, 180f, 0);
+
+            // 위치 변경 반영 대기
+            yield return null;
+
+            // 4. CharacterController 다시 활성화
+            if (cc1 != null) cc1.enabled = true;
+            if (cc2 != null) cc2.enabled = true;
+
+            // 5. 리스폰 포인트 스왑
+            if (players_movement.Count >= 2)
+            {
+                Transform tempRespawn = players_movement[0].respawnPoint;
+                players_movement[0].respawnPoint = players_movement[1].respawnPoint;
+                players_movement[1].respawnPoint = tempRespawn;
+            }
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        if (rouletteResultText != null)
+        {
+            rouletteResultText.gameObject.SetActive(false);
+        }
+
+        if (nextPhaseButton != null)
+        {
+            nextPhaseButton.SetActive(true);
+            TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (btnText != null) btnText.text = "Game Start!";
+        }
+
+        isPhaseReady = false;
+        yield return new WaitUntil(() => isPhaseReady);
+
+        if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
+    }
+
+    public void OnNextPhaseButtonClicked()
+    {
+        isPhaseReady = true;
     }
 
     public void SetGameState(GameState newState)
@@ -264,21 +409,18 @@ public class GameManager : MonoBehaviour
             OnTurnEnd.Invoke(previousPlayer.playerID);
         }
 
-        // 점령시 점수 획득
         if (TurnFlag)
         {
             if (players[0].isInCaptureZone && !players[1].isInCaptureZone)
             {
                 score_player1 += 1;
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 1.0f)
                 {
                     coment = true;
                     if (announcerAudioSource != null && pointCommentary != null)
                     {
-                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
                         announcerAudioSource.Stop();
                         announcerAudioSource.PlayOneShot(pointCommentary);
-
                     }
                 }
             }
@@ -288,57 +430,45 @@ public class GameManager : MonoBehaviour
             if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
             {
                 score_player2 += 1;
-                if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+                if (Random.value <= 1.0f)
                 {
                     coment = true;
-
                     if (announcerAudioSource != null && pointCommentary != null)
                     {
-                        // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
                         announcerAudioSource.Stop();
                         announcerAudioSource.PlayOneShot(pointCommentary);
-
                     }
                 }
             }
         }
 
-        // ★ 점수 변경 후 UI 업데이트
         UpdateScoreUI();
 
         if (!players[1].isInCaptureZone && !players[0].isInCaptureZone)
         {
-            if (Random.value <= 0.2f) // 확률 
+            if (Random.value <= 0.2f)
             {
                 coment = true;
-
                 if (announcerAudioSource != null && NpCommentary != null)
                 {
-                    // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
                     announcerAudioSource.Stop();
                     announcerAudioSource.PlayOneShot(NpCommentary);
-
                 }
             }
         }
         if (players[1].isInCaptureZone && players[0].isInCaptureZone)
         {
-            if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+            if (Random.value <= 1.0f)
             {
                 coment = true;
-
                 if (announcerAudioSource != null && p2Commentary != null)
                 {
-                    // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
                     announcerAudioSource.Stop();
                     announcerAudioSource.PlayOneShot(p2Commentary);
-
                 }
             }
         }
 
-        // ▼▼▼ [추가됨] 점수 체크 후 BGM 변경 로직 ▼▼▼
-        // 둘 중 한 명이라도 2점 이상이고, 현재 BGM이 이미 BGM2가 아닐 경우에만 변경
         if ((score_player1 >= 2 || score_player2 >= 2) && BGMAudioSource.clip != BGM2)
         {
             if (BGMAudioSource != null && BGM2 != null)
@@ -348,15 +478,14 @@ public class GameManager : MonoBehaviour
                 BGMAudioSource.Play();
             }
         }
-        // ▲▲▲ [여기까지 추가] ▲▲▲
 
         if (score_player1 >= WinningScore || score_player2 >= WinningScore)
         {
-            Debug.Log($"Player{(currentPlayerIndex + 1) % 2} Win ! \nGameover!");
-            SceneManager.LoadScene("GameoverScene");
+            HandleGameOver();
+            return;
         }
 
-        Item_Reset(); // 아이템 영향 초기화
+        Item_Reset();
 
         currentPlayerIndex++;
         if (currentPlayerIndex >= players.Count)
@@ -376,11 +505,12 @@ public class GameManager : MonoBehaviour
         TurnFlag = !TurnFlag;
     }
 
+    // ★ [수정됨] 이 함수에서 firstPlayer를 쓰면 안 됩니다! nextPlayer로 수정했습니다.
     IEnumerator StartNextTurnWithDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
 
-        PlayerController nextPlayer = players[currentPlayerIndex];
+        PlayerController nextPlayer = players[currentPlayerIndex]; // 여기서는 nextPlayer를 씁니다.
         nextPlayer.StartTurn();
 
         if (mainCameraController != null)
@@ -395,20 +525,17 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
-        Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!");
-        if (Random.value <= 0.2f) // 확률 
+        Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!"); // firstPlayer -> nextPlayer 수정됨
+        if (Random.value <= 0.2f)
         {
             if (announcerAudioSource != null && turnCommentary != null && coment == false)
             {
-                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
                 announcerAudioSource.Stop();
                 announcerAudioSource.PlayOneShot(turnCommentary);
-
             }
             else
             {
                 coment = false;
-
             }
         }
     }
@@ -431,12 +558,25 @@ public class GameManager : MonoBehaviour
         SetGameState(GameState.GameOver);
         OnGameOver.Invoke();
         Debug.Log("--- game over ---");
-        StartCoroutine(RestartGameAfterDelay(3.0f));
+
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+
+            if (winnerText != null)
+            {
+                string winnerMsg = "무승부";
+                if (score_player1 > score_player2) winnerMsg = "Player 1 승리!";
+                else if (score_player2 > score_player1) winnerMsg = "Player 2 승리!";
+
+                winnerText.text = winnerMsg;
+            }
+        }
     }
 
-    IEnumerator RestartGameAfterDelay(float delay)
+    public void OnRestartButtonClicked()
     {
-        yield return new WaitForSeconds(delay);
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -475,7 +615,6 @@ public class GameManager : MonoBehaviour
         else return false;
     }
 
-    // ★ 점수 UI 업데이트 함수 추가
     void UpdateScoreUI()
     {
         if (scoreTextP1 != null) scoreTextP1.text = $"{score_player1}";
