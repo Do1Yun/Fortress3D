@@ -26,4 +26,8 @@ public class LoadManager : MonoBehaviour
     {
         Application.Quit();
     }
+    public void restart()
+    {
+        Time.timeScale = 1f;
+    }
 }
