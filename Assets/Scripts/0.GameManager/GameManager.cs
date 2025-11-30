@@ -41,6 +41,10 @@ public class GameManager : MonoBehaviour
     public GameObject pauseMenuUI;
     public GameObject darkBackground;
 
+    [Header("점수 UI 연결")] // ★ 추가됨
+    public TextMeshProUGUI scoreTextP1;
+    public TextMeshProUGUI scoreTextP2;
+
     [Header("플레이어 수,스코어")]
     public int minPlayersForGame = 2;
     public int score_player1 = 0, score_player2 = 0;
@@ -100,9 +104,12 @@ public class GameManager : MonoBehaviour
             return;
         }
         //SceneManager.LoadScene("GameoverScene");
-        pauseMenuUI.SetActive(false);
+        if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
 
         InitializeGame();
+
+        // ★ 게임 시작 시 점수 UI 초기화
+        UpdateScoreUI();
     }
 
     void Update()
@@ -295,6 +302,10 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
+
+        // ★ 점수 변경 후 UI 업데이트
+        UpdateScoreUI();
+
         if (!players[1].isInCaptureZone && !players[0].isInCaptureZone)
         {
             if (Random.value <= 0.2f) // 확률 
@@ -462,5 +473,12 @@ public class GameManager : MonoBehaviour
     {
         if (currentState == GameState.MakeGround) return true;
         else return false;
+    }
+
+    // ★ 점수 UI 업데이트 함수 추가
+    void UpdateScoreUI()
+    {
+        if (scoreTextP1 != null) scoreTextP1.text = $"{score_player1}";
+        if (scoreTextP2 != null) scoreTextP2.text = $"{score_player2}";
     }
 }
