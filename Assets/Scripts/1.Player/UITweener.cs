@@ -96,29 +96,21 @@ public class UITweener : MonoBehaviour
         // 애니메이션이 끝나도 오브젝트를 비활성화하지 않습니다.
     }
 
-    public void Show(AudioSource source = null, AudioClip clip = null)
+    public void Show()
     {
         if (isShown || isAnimating) return;
         isShown = true;
 
         gameObject.SetActive(true);
 
-        if (source != null && clip != null)
-        {
-            source.PlayOneShot(clip);
-        }
         StartCoroutine(AnimatePosition(shownPosition));
     }
 
-    public void Hide(AudioSource source = null, AudioClip clip = null)
+    public void Hide()
     {
         if (!isShown || isAnimating) return;
         isShown = false;
 
-        if (source != null && clip != null)
-        {
-            source.PlayOneShot(clip);
-        }
         StartCoroutine(AnimatePosition(hiddenPosition));
     }
 }

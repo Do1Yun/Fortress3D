@@ -40,10 +40,6 @@ public class PlayerController : MonoBehaviour
     [Tooltip("각 PlayerState 별로 활성화할 UI 트위너들을 지정합니다.")]
     public List<UIStateSettings> uiStateSettings;
 
-    [Header("UI 사운드 설정")]
-    public AudioSource uiAudioSource;
-    public AudioClip uiSlideInSound;
-    public AudioClip uiSlideOutSound;
 
     [Header("중계 멘트 설정")]
     [Tooltip("이동 시작 시 재생할 첫 번째 멘트")]
@@ -582,11 +578,11 @@ public class PlayerController : MonoBehaviour
                 if (tweener == null) continue;
                 if (tweenersToShow.Contains(tweener))
                 {
-                    tweener.Show(uiAudioSource, uiSlideInSound);
+                    tweener.Show();
                 }
                 else
                 {
-                    tweener.Hide(uiAudioSource, uiSlideOutSound);
+                    tweener.Hide();
                 }
             }
         }
