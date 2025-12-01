@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI; // ★ 버튼 제어를 위해 추가 필수
+
 using TMPro;
 
 public class GameManager : MonoBehaviour
@@ -14,18 +16,18 @@ public class GameManager : MonoBehaviour
     public int currentPlayerIndex = 0;
 
     [Header("중계 오디오 설정")]
-    public AudioSource announcerAudioSource; // 중계 멘트를 재생할 오디오 소스
-    public AudioClip openingCommentary1;      // 첫 번째 멘트 파일
-    public AudioClip openingCommentary2;      // 두 번째 멘트 파일
+    public AudioSource announcerAudioSource;
+    public AudioClip openingCommentary1;
+    public AudioClip openingCommentary2;
     public AudioClip closingCommentary;
     public AudioClip turnCommentary;
     public AudioClip pointCommentary;
     public AudioClip p2Commentary;
     public AudioClip NpCommentary;
 
-    [Header("룰렛 연출 오디오 (추가됨)")]
-    public AudioClip rouletteSpinSFX;   // 룰렛 돌아가는 소리 (틱, 틱, 틱)
-    public AudioClip rouletteDecideSFX; // 룰렛 결정 소리 (탁!)
+    [Header("룰렛 연출 오디오")]
+    public AudioClip rouletteSpinSFX;
+    public AudioClip rouletteDecideSFX;
 
     [Header("배경음악 오디오 설정")]
     public AudioSource BGMAudioSource;
@@ -38,8 +40,8 @@ public class GameManager : MonoBehaviour
     public ProjectileFollowCamera projectileCam;
 
     [Header("UI 연결")]
-    public TextMeshProUGUI turnDisplayText; // 기존 턴 표시 텍스트
-    public TextMeshProUGUI rouletteResultText; // 룰렛 전용 텍스트
+    public TextMeshProUGUI turnDisplayText;
+    public TextMeshProUGUI rouletteResultText;
     public GameObject pauseMenuUI;
     public GameObject darkBackground;
 
@@ -50,7 +52,7 @@ public class GameManager : MonoBehaviour
     [Header("진행 제어 UI")]
     public GameObject nextPhaseButton; // '다음' 또는 '게임 시작' 버튼
     public GameObject gameOverPanel;   // 게임 오버 패널
-    public TextMeshProUGUI winnerText; // 승리자 텍스트
+    public TextMeshProUGUI winnerText;
 
     [Header("플레이어 수,스코어")]
     public int minPlayersForGame = 2;
@@ -62,7 +64,6 @@ public class GameManager : MonoBehaviour
     public bool dangtang = false;
     public bool coment = false;
 
-    // 버튼 입력을 기다리기 위한 플래그
     private bool isPhaseReady = false;
 
     bool isPaused = false;
@@ -85,9 +86,12 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
+        // 싱글톤 갱신 로직
         if (instance != null && instance != this)
         {
+            instance.InitializeGameData(this);
             Destroy(gameObject);
+            return;
         }
         else
         {
@@ -95,7 +99,7 @@ public class GameManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
 
-        if (mainCameraController == null)
+        if (mainCameraController == null && Camera.main != null)
         {
             mainCameraController = Camera.main.GetComponent<CameraController>();
         }
@@ -108,22 +112,16 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        if (players == null || players.Count < minPlayersForGame)
+        if (instance == this)
         {
-            Debug.LogError($"플레이어 수 부족.", this);
-            return;
+            if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
+            if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
+            if (gameOverPanel != null) gameOverPanel.SetActive(false);
+            if (rouletteResultText != null) rouletteResultText.gameObject.SetActive(false);
+
+            StartGameLogic();
+            UpdateScoreUI();
         }
-
-        if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
-
-        if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
-        if (gameOverPanel != null) gameOverPanel.SetActive(false);
-
-        // 룰렛 텍스트 초기화 (숨김)
-        if (rouletteResultText != null) rouletteResultText.gameObject.SetActive(false);
-
-        InitializeGame();
-        UpdateScoreUI();
     }
 
     void Update()
@@ -135,6 +133,82 @@ public class GameManager : MonoBehaviour
                 Pause();
             }
         }
+    }
+
+    // ★ 핵심 함수: 게임 재시작 시 데이터 리셋 및 참조 갱신
+    public void InitializeGameData(GameManager newManager)
+    {
+        // 1. 참조 갱신
+        this.players = newManager.players;
+        this.players_movement = newManager.players_movement;
+
+        this.announcerAudioSource = newManager.announcerAudioSource;
+        this.BGMAudioSource = newManager.BGMAudioSource;
+
+        this.mainCameraController = newManager.mainCameraController;
+        this.MGCamera = newManager.MGCamera;
+        this.projectileCam = newManager.projectileCam;
+
+        this.turnDisplayText = newManager.turnDisplayText;
+        this.rouletteResultText = newManager.rouletteResultText;
+        this.pauseMenuUI = newManager.pauseMenuUI;
+        this.darkBackground = newManager.darkBackground;
+
+        this.scoreTextP1 = newManager.scoreTextP1;
+        this.scoreTextP2 = newManager.scoreTextP2;
+
+        this.nextPhaseButton = newManager.nextPhaseButton;
+        this.gameOverPanel = newManager.gameOverPanel;
+        this.winnerText = newManager.winnerText;
+
+        // ★ [수정됨] 버튼 클릭 이벤트 자동 재연결
+        // 이전 매니저는 파괴되므로, 버튼이 살아남은 매니저(this)의 함수를 호출하도록 다시 연결합니다.
+        if (this.nextPhaseButton != null)
+        {
+            Button btn = this.nextPhaseButton.GetComponentInChildren<Button>();
+            if (btn != null)
+            {
+                btn.onClick.RemoveAllListeners();
+                btn.onClick.AddListener(OnNextPhaseButtonClicked);
+            }
+        }
+
+        // 2. 변수 리셋
+        score_player1 = 0;
+        score_player2 = 0;
+        playerInCaptureZone = 0;
+        currentPlayerIndex = 0;
+        TurnFlag = false;
+        dangtang = false;
+        coment = false;
+        isPaused = false;
+        isPhaseReady = false;
+
+        // 3. 시간 배율 초기화
+        Time.timeScale = 1f;
+
+        // 4. 정리 및 재시작
+        StopAllCoroutines();
+
+        if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
+        if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (rouletteResultText != null) rouletteResultText.gameObject.SetActive(false);
+        if (darkBackground != null) darkBackground.SetActive(false);
+
+        UpdateScoreUI();
+        StartGameLogic();
+    }
+
+    void StartGameLogic()
+    {
+        if (players == null || players.Count < minPlayersForGame)
+        {
+            Debug.LogError($"플레이어 수 부족.", this);
+            return;
+        }
+
+        InitializeGame();
     }
 
     public void Pause()
@@ -195,6 +269,7 @@ public class GameManager : MonoBehaviour
         dangtang = true;
         SetGameState(GameState.MakeGround);
 
+        // ★ [수정됨] ChangeWind() 대신 ResetWind()를 호출하여 바람을 0으로 만듭니다.
         if (WindController.instance != null)
         {
             WindController.instance.ResetWind();
@@ -211,7 +286,6 @@ public class GameManager : MonoBehaviour
             turnDisplayText.text = "전투 준비!";
         }
 
-        // 각 플레이어 우당탕탕 진행
         foreach (var player in players)
         {
             if (nextPhaseButton != null)
@@ -219,17 +293,15 @@ public class GameManager : MonoBehaviour
                 nextPhaseButton.SetActive(true);
                 TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (btnText != null) btnText.text = $"P{player.playerID + 1} 준비";
+
+                // 버튼 누를 때까지 대기
+                isPhaseReady = false;
+                yield return new WaitUntil(() => isPhaseReady);
+                nextPhaseButton.SetActive(false);
             }
 
-            isPhaseReady = false;
-            yield return new WaitUntil(() => isPhaseReady);
-
-            if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
-
             player.MakeGround();
-
             yield return new WaitForSeconds(player.MakingGroundTime);
-
             yield return new WaitForSeconds(delay / 2);
         }
 
@@ -241,19 +313,18 @@ public class GameManager : MonoBehaviour
 
         // ------------------------------------ 룰렛 및 진영 결정 ------------------------------------ 
 
-        // 룰렛 코루틴 호출
         yield return StartCoroutine(PositionSwapRoulette());
-
 
         // ------------------------------------ 게임 시작 ------------------------------------ 
 
-        dangtang = false; // 우당탕탕 종료
-
+        dangtang = false;
         SetGameState(GameState.TurnEnd);
 
+        // ★ [확인] 실제 턴이 시작되기 직전, 첫 바람을 생성합니다.
+        // 이때는 이미 dangtang = false이므로 ChangeWind()가 정상 작동합니다.
         if (WindController.instance != null)
         {
-            WindController.instance.ChangeWind(); // 바람 다시 생성 (무작위)
+            WindController.instance.ChangeWind();
         }
 
         PlayerController firstPlayer = players[currentPlayerIndex];
@@ -273,10 +344,21 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(firstPlayer.playerID);
-        Debug.Log($"Player {firstPlayer.playerID}의 턴 시작!");
+
+        if (Random.value <= 0.2f)
+        {
+            if (announcerAudioSource != null && turnCommentary != null && coment == false)
+            {
+                announcerAudioSource.Stop();
+                announcerAudioSource.PlayOneShot(turnCommentary);
+            }
+            else
+            {
+                coment = false;
+            }
+        }
     }
 
-    // 룰렛 연출 및 위치 스왑 로직
     IEnumerator PositionSwapRoulette()
     {
         bool doSwap = (players.Count >= 2 && Random.value <= 0.5f);
@@ -323,46 +405,35 @@ public class GameManager : MonoBehaviour
         {
             if (rouletteResultText != null)
                 rouletteResultText.text = "<color=red>진영 교체\n<size=80%>Position SWAP</size></color>";
-
-            Debug.Log("⚡ 룰렛 결과: 진영 교체!");
         }
         else
         {
             if (rouletteResultText != null)
                 rouletteResultText.text = "<color=blue>진영 유지\n<size=80%>Position KEEP</size></color>";
-
-            Debug.Log("⚡ 룰렛 결과: 위치 유지");
         }
 
         yield return new WaitForSeconds(0.5f);
 
-        // 위치 변경 로직 (CharacterController 처리 포함)
         if (doSwap)
         {
-            // 1. CharacterController 비활성화
             CharacterController cc1 = players[0].GetComponent<CharacterController>();
             CharacterController cc2 = players[1].GetComponent<CharacterController>();
 
             if (cc1 != null) cc1.enabled = false;
             if (cc2 != null) cc2.enabled = false;
 
-            // 2. 위치 스왑
             Vector3 tempPos = players[0].transform.position;
             players[0].transform.position = players[1].transform.position;
             players[1].transform.position = tempPos;
 
-            // 3. 180도 회전
             players[0].transform.Rotate(0, 180f, 0);
             players[1].transform.Rotate(0, 180f, 0);
 
-            // 위치 변경 반영 대기
             yield return null;
 
-            // 4. CharacterController 다시 활성화
             if (cc1 != null) cc1.enabled = true;
             if (cc2 != null) cc2.enabled = true;
 
-            // 5. 리스폰 포인트 스왑
             if (players_movement.Count >= 2)
             {
                 Transform tempRespawn = players_movement[0].respawnPoint;
@@ -378,17 +449,17 @@ public class GameManager : MonoBehaviour
             rouletteResultText.gameObject.SetActive(false);
         }
 
+        // ★ [수정됨] 버튼이 있을 때만 대기
         if (nextPhaseButton != null)
         {
             nextPhaseButton.SetActive(true);
             TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
             if (btnText != null) btnText.text = "Game Start!";
+
+            isPhaseReady = false;
+            yield return new WaitUntil(() => isPhaseReady);
+            nextPhaseButton.SetActive(false);
         }
-
-        isPhaseReady = false;
-        yield return new WaitUntil(() => isPhaseReady);
-
-        if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
     }
 
     public void OnNextPhaseButtonClicked()
@@ -409,8 +480,8 @@ public class GameManager : MonoBehaviour
         if (WindController.instance != null)
         {
             WindController.instance.ChangeWind();
-
         }
+
         PlayerController previousPlayer = players[currentPlayerIndex];
         if (previousPlayer != null)
         {
@@ -423,15 +494,7 @@ public class GameManager : MonoBehaviour
             if (players[0].isInCaptureZone && !players[1].isInCaptureZone)
             {
                 score_player1 += 1;
-                if (Random.value <= 1.0f)
-                {
-                    coment = true;
-                    if (announcerAudioSource != null && pointCommentary != null)
-                    {
-                        announcerAudioSource.Stop();
-                        announcerAudioSource.PlayOneShot(pointCommentary);
-                    }
-                }
+                PlayPointCommentary();
             }
         }
         else
@@ -439,44 +502,12 @@ public class GameManager : MonoBehaviour
             if (players[1].isInCaptureZone && !players[0].isInCaptureZone)
             {
                 score_player2 += 1;
-                if (Random.value <= 1.0f)
-                {
-                    coment = true;
-                    if (announcerAudioSource != null && pointCommentary != null)
-                    {
-                        announcerAudioSource.Stop();
-                        announcerAudioSource.PlayOneShot(pointCommentary);
-                    }
-                }
+                PlayPointCommentary();
             }
         }
 
         UpdateScoreUI();
-
-        if (!players[1].isInCaptureZone && !players[0].isInCaptureZone)
-        {
-            if (Random.value <= 0.2f)
-            {
-                coment = true;
-                if (announcerAudioSource != null && NpCommentary != null)
-                {
-                    announcerAudioSource.Stop();
-                    announcerAudioSource.PlayOneShot(NpCommentary);
-                }
-            }
-        }
-        if (players[1].isInCaptureZone && players[0].isInCaptureZone)
-        {
-            if (Random.value <= 1.0f)
-            {
-                coment = true;
-                if (announcerAudioSource != null && p2Commentary != null)
-                {
-                    announcerAudioSource.Stop();
-                    announcerAudioSource.PlayOneShot(p2Commentary);
-                }
-            }
-        }
+        HandleCaptureZoneCommentary();
 
         if ((score_player1 >= 2 || score_player2 >= 2) && BGMAudioSource.clip != BGM2)
         {
@@ -514,6 +545,47 @@ public class GameManager : MonoBehaviour
         TurnFlag = !TurnFlag;
     }
 
+    void PlayPointCommentary()
+    {
+        if (Random.value <= 1.0f)
+        {
+            coment = true;
+            if (announcerAudioSource != null && pointCommentary != null)
+            {
+                announcerAudioSource.Stop();
+                announcerAudioSource.PlayOneShot(pointCommentary);
+            }
+        }
+    }
+
+    void HandleCaptureZoneCommentary()
+    {
+        if (!players[1].isInCaptureZone && !players[0].isInCaptureZone)
+        {
+            if (Random.value <= 0.2f)
+            {
+                coment = true;
+                if (announcerAudioSource != null && NpCommentary != null)
+                {
+                    announcerAudioSource.Stop();
+                    announcerAudioSource.PlayOneShot(NpCommentary);
+                }
+            }
+        }
+        if (players[1].isInCaptureZone && players[0].isInCaptureZone)
+        {
+            if (Random.value <= 1.0f)
+            {
+                coment = true;
+                if (announcerAudioSource != null && p2Commentary != null)
+                {
+                    announcerAudioSource.Stop();
+                    announcerAudioSource.PlayOneShot(p2Commentary);
+                }
+            }
+        }
+    }
+
     IEnumerator StartNextTurnWithDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -533,7 +605,7 @@ public class GameManager : MonoBehaviour
 
         SetGameState(GameState.PlayerTurn);
         OnTurnStart.Invoke(nextPlayer.playerID);
-        Debug.Log($"Player {nextPlayer.playerID}의 턴 시작!");
+
         if (Random.value <= 0.2f)
         {
             if (announcerAudioSource != null && turnCommentary != null && coment == false)
@@ -565,7 +637,6 @@ public class GameManager : MonoBehaviour
     {
         SetGameState(GameState.GameOver);
         OnGameOver.Invoke();
-        Debug.Log("--- game over ---");
 
         if (gameOverPanel != null)
         {

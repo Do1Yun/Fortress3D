@@ -39,8 +39,8 @@ public class GameOverManager : MonoBehaviour
             winPosition = position[0].position;
             losePosition = position[1].position;
 
-            players[winPlayer_index].transform.position = winPosition;
-            players[(winPlayer_index + 1) % 2].transform.position = losePosition;
+            players[(winPlayer_index + 1) % 2].transform.position = winPosition;
+            players[winPlayer_index].transform.position = losePosition;
         }
 
         if (projectileprefab != null)

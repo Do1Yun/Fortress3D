@@ -22,6 +22,10 @@ public class LoadManager : MonoBehaviour
     {
         SceneManager.LoadScene("SettingScene");
     }
+    public void GameoverScene()
+    {
+        SceneManager.LoadScene("GameoverScene");
+    }
     public void Exit()
     {
         Application.Quit();
