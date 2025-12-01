@@ -65,6 +65,8 @@ public class PlayerController : MonoBehaviour
     public AudioClip commentItem2x;    // 사거리 증가
     public AudioClip commentItemTurnOff;  // 상대 궤적 끄기
     public AudioClip commentItemChasing;
+    public AudioClip UseItemSound;
+    AudioSource audioSource;
 
     private bool hasPlayedStaminaCommentary = false; // 턴 당 1회 재생 체크용
 
@@ -134,6 +136,7 @@ public class PlayerController : MonoBehaviour
         playerShooting.SetUIReferences(powerImage, powerText);
 
         gameManager = FindObjectOfType<GameManager>();
+        audioSource = GetComponent<AudioSource>();
 
         if (gameManager == null)
             Debug.LogError("GameManager를 찾을 수 없습니다!");
@@ -619,6 +622,11 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        if (audioSource && UseItemSound)
+        {
+            audioSource.PlayOneShot(UseItemSound, 5.0f);
+        }
+
         Debug.Log($"아이템 사용: {ItemList[index]}");
         ApplyEffect_GameObject(ItemList[index]);
         ItemList.RemoveAt(index);
@@ -732,6 +740,11 @@ public class PlayerController : MonoBehaviour
     // '우당탕탕' 중 마우스 입력 처리
     private void HandleModifyKeys()
     {
+        if (gameManager.isPaused)
+        {
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);

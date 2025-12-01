@@ -66,7 +66,7 @@ public class GameManager : MonoBehaviour
 
     private bool isPhaseReady = false;
 
-    bool isPaused = false;
+    public bool isPaused = false;
 
     public enum GameState
     {

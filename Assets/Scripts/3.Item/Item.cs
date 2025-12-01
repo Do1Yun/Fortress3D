@@ -25,10 +25,15 @@ public class Item : MonoBehaviour
     [Header("오디오 설정")]
     [Tooltip("아이템이 생성될 때 재생할 중계 멘트")]
     public AudioClip itemCommentary;
+    public AudioClip hitSound;
+    public float minVelocity = 0.1f;
+
+    AudioSource audioSource;
+
     private void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
-
+        audioSource = GetComponent<AudioSource>();
         if (gameManager == null)
             Debug.LogError("GameManager를 찾을 수 없습니다!");
     }
@@ -73,6 +78,13 @@ public class Item : MonoBehaviour
             {
                 PlayerController player = gameManager.players[gameManager.currentPlayerIndex];
                 ProcessItem(player);
+            }
+        }
+        else if(other.CompareTag("Ground") || other.gameObject.layer == LayerMask.NameToLayer("Environment"))
+        {
+            if (audioSource && hitSound)
+            {
+                audioSource.PlayOneShot(hitSound, 0.2f);
             }
         }
     }
