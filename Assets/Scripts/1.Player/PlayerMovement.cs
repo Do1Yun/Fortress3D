@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(AudioSource))] // [추가] 오디오 소스 컴포넌트 필수 지정
 public class PlayerMovement : MonoBehaviour
 {
     private GameManager gameManager;
@@ -19,14 +20,25 @@ public class PlayerMovement : MonoBehaviour
     public float slopeAdaptSpeed = 10f;
     public float slopeRaycastLength = 1.5f;
     public float forwardRaycastLength = 1.5f;
-    public LayerMask groundLayer; // 지면/벽 감지 레이어
+    public LayerMask groundLayer;
 
     [Header("스테미너 설정")]
     public float maxStamina = 100f;
     public float staminaDrainRate = 20f;
     public float currentStamina;
+
     [Header("오디오 설정")]
     public AudioClip RespawnCommentary;
+
+    // --- [추가] 이동 사운드 관련 변수 ---
+    [Space(10)]
+    public AudioClip engineSoundClip;   // 엔진 루프 사운드 (우웅~ 하는 소리)
+    public float minPitch = 0.9f;       // 정지 상태일 때 피치
+    public float maxPitch = 1.5f;       // 최고 속도일 때 피치
+    public float pitchChangeSpeed = 2f; // 피치가 변하는 부드러움 정도
+    private AudioSource movementAudioSource; // 내 탱크의 오디오 소스
+    // -------------------------------
+
     private float baseMaxStamina;
     private Image staminaImage;
     private CharacterController characterController;
@@ -41,18 +53,14 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 knockbackVelocity = Vector3.zero;
     private float knockbackDamping = 5.0f;
 
-    // ===================== 리스폰/충돌 트리거 설정 =====================
     [Header("리스폰/충돌 트리거")]
     public Transform respawnPoint;
     public Collider respawnTrigger;
     public float respawnLift = 0.08f;
     public bool copyRespawnRotation = false;
-    // ================================================================
 
-    // 플레이어가 외부 힘을 받을 수 있도록 하는 함수
     public void ApplyKnockback(Vector3 direction, float force)
     {
-        // y축으로는 밀려나지 않도록 방향을 수평으로 고정합니다.
         direction.y = 0;
         knockbackVelocity = direction.normalized * force;
     }
@@ -64,8 +72,32 @@ public class PlayerMovement : MonoBehaviour
         if (gameManager == null)
             Debug.LogError("GameManager를 찾을 수 없습니다!");
         characterController = GetComponent<CharacterController>();
+
+        // [추가] 오디오 소스 가져오기 및 초기화
+        movementAudioSource = GetComponent<AudioSource>();
+        if (movementAudioSource == null)
+        {
+            // 만약 없으면 코드에서 추가
+            movementAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        // [추가] 오디오 설정 적용
+        movementAudioSource.clip = engineSoundClip;
+        movementAudioSource.loop = true; // 엔진 소리는 계속 돌아야 함
+        movementAudioSource.playOnAwake = true;
+        movementAudioSource.spatialBlend = 1.0f; // 3D 사운드
+        movementAudioSource.Play(); // 소리 재생 시작
+
         baseMaxStamina = maxStamina;
         currentStamina = maxStamina;
+    }
+
+    // [추가] 매 프레임마다 소리 조절을 위해 Update 추가
+    void Update()
+    {
+        // 입력 및 이동 처리 함수가 외부에서 불리는 구조라면 이 Update는 필요 없을 수 있으나,
+        // 보통 소리 갱신은 매 프레임 이루어져야 부드럽습니다.
+        HandleEngineAudio();
     }
 
     public void SetUIReferences(Image staminaImg)
@@ -86,7 +118,6 @@ public class PlayerMovement : MonoBehaviour
         UpdateStaminaUI();
     }
 
-
     public void HandleMovement()
     {
         if (isWallClimbing)
@@ -100,11 +131,34 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // [추가] 엔진 사운드 처리 함수
+    private void HandleEngineAudio()
+    {
+        if (movementAudioSource == null || engineSoundClip == null) return;
+
+        // 현재 속도가 0이면 정지(minPitch), 최고속도면 maxPitch로 목표 설정
+        float targetPitch = minPitch;
+
+        // 속도 비율 계산 (절댓값 사용)
+        float speedRatio = Mathf.Abs(currentSpeed) / maxSpeed;
+
+        // 벽을 타고 있거나 움직이는 중이면 피치를 높임
+        if (isWallClimbing || Mathf.Abs(currentSpeed) > 0.1f)
+        {
+            targetPitch = Mathf.Lerp(minPitch, maxPitch, speedRatio);
+        }
+
+        // 현재 피치를 목표 피치로 부드럽게 변경
+        movementAudioSource.pitch = Mathf.Lerp(movementAudioSource.pitch, targetPitch, pitchChangeSpeed * Time.deltaTime);
+    }
+
     public void UpdatePhysics()
     {
         currentSpeed = Mathf.Lerp(currentSpeed, 0, deceleration * Time.deltaTime);
         ApplyGravityAndSlope();
     }
+
+    // ... (이하 기존 코드와 동일: ApplyGravityAndSlope, HandleWallClimbing, ApplyHorizontalMovement 등) ...
 
     private void ApplyGravityAndSlope()
     {
@@ -112,10 +166,9 @@ public class PlayerMovement : MonoBehaviour
         Vector3 moveDirection = Vector3.zero;
         bool groundFound = false;
 
-        // 전방 벽 감지
         if (Physics.Raycast(transform.position, transform.forward, out hit, forwardRaycastLength, groundLayer))
         {
-            Debug.Log("Forward Raycast Detected Object: " + hit.collider.name);
+            // Debug.Log 삭제 혹은 유지
             if (hit.normal.y < 0.1f && Input.GetAxis("Vertical") > 0.1f && !isWallClimbing && characterController.isGrounded)
             {
                 isWallClimbing = true;
@@ -125,7 +178,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // 바닥 경사 감지
         if (Physics.Raycast(transform.position, Vector3.down, out hit, slopeRaycastLength, groundLayer))
         {
             Quaternion targetRotation = Quaternion.FromToRotation(transform.up, hit.normal);
@@ -140,17 +192,14 @@ public class PlayerMovement : MonoBehaviour
             moveDirection = transform.forward * currentSpeed;
         }
 
-        // 중력
         if (characterController.isGrounded && playerVelocity.y < 0)
         {
             playerVelocity.y = -2f;
         }
         playerVelocity.y += gravityValue * Time.deltaTime;
 
-        // 넉백 감쇠
         knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, knockbackDamping * Time.deltaTime);
 
-        // 최종 이동
         characterController.Move((moveDirection + playerVelocity + knockbackVelocity) * Time.deltaTime * speedMultiplier);
     }
 
@@ -218,6 +267,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // ... (나머지 UI 및 리스폰 함수 동일) ...
     public void UpdateStaminaUI()
     {
         if (staminaImage != null)
@@ -226,14 +276,12 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ===================== 리스폰 =====================
     public void Respawn()
     {
-        if (Random.value <= 1.0f) // 확률 (현재 100%로 설정됨)
+        if (Random.value <= 1.0f)
         {
             if (gameManager != null && gameManager.announcerAudioSource != null && RespawnCommentary != null)
             {
-                // 기존 멘트가 있다면 끊고, 아이템 멘트를 즉시 재생
                 gameManager.announcerAudioSource.Stop();
                 gameManager.announcerAudioSource.PlayOneShot(RespawnCommentary);
             }
@@ -250,7 +298,6 @@ public class PlayerMovement : MonoBehaviour
         bool prevEnabled = characterController.enabled;
         characterController.enabled = false;
 
-        // 내부 상태 초기화
         playerVelocity = Vector3.zero;
         knockbackVelocity = Vector3.zero;
         currentSpeed = 0f;
@@ -262,8 +309,6 @@ public class PlayerMovement : MonoBehaviour
 
         Debug.Log($"[Respawn] {name} → {respawnPoint.name} @ {targetPos}");
     }
-
-    // ===================== 충돌 → 리스폰 트리거 =====================
 
     private void OnTriggerEnter(Collider other)
     {
