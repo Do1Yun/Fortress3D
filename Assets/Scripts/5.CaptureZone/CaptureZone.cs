@@ -24,7 +24,7 @@ public class CaptureZone : MonoBehaviour
     {
         gameManager = FindObjectOfType<GameManager>();
         spotLight = GetComponentInChildren<Light>();
-        spotLight.color = Color.green;
+        spotLight.color = Color.white;
 
         if (gameManager == null)
         {
