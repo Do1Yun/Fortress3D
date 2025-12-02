@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; // ★ 버튼 제어를 위해 추가 필수
-
+using UnityEngine.UI;
 using TMPro;
 
 public class GameManager : MonoBehaviour
@@ -26,7 +25,7 @@ public class GameManager : MonoBehaviour
     public AudioClip NpCommentary;
 
     [Header("룰렛 연출 오디오")]
-    public AudioClip rouletteSpinSFX;
+    public AudioClip rouletteTickSFX;
     public AudioClip rouletteDecideSFX;
 
     [Header("배경음악 오디오 설정")]
@@ -41,17 +40,19 @@ public class GameManager : MonoBehaviour
 
     [Header("UI 연결")]
     public TextMeshProUGUI turnDisplayText;
+
+    public GameObject roulettePanel;
     public TextMeshProUGUI rouletteResultText;
+
+    public GameObject announcementPanel;
+    public TextMeshProUGUI announcementText;
+
     public GameObject pauseMenuUI;
     public GameObject darkBackground;
-
-    [Header("점수 UI 연결")]
     public TextMeshProUGUI scoreTextP1;
     public TextMeshProUGUI scoreTextP2;
-
-    [Header("진행 제어 UI")]
-    public GameObject nextPhaseButton; // '다음' 또는 '게임 시작' 버튼
-    public GameObject gameOverPanel;   // 게임 오버 패널
+    public GameObject nextPhaseButton;
+    public GameObject gameOverPanel;
     public TextMeshProUGUI winnerText;
 
     [Header("플레이어 수,스코어")]
@@ -86,7 +87,6 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
-        // 싱글톤 갱신 로직
         if (instance != null && instance != this)
         {
             instance.InitializeGameData(this);
@@ -117,7 +117,10 @@ public class GameManager : MonoBehaviour
             if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
             if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+
+            if (roulettePanel != null) roulettePanel.SetActive(false);
             if (rouletteResultText != null) rouletteResultText.gameObject.SetActive(false);
+            if (announcementPanel != null) announcementPanel.SetActive(false);
 
             StartGameLogic();
             UpdateScoreUI();
@@ -135,10 +138,8 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ★ 핵심 함수: 게임 재시작 시 데이터 리셋 및 참조 갱신
     public void InitializeGameData(GameManager newManager)
     {
-        // 1. 참조 갱신
         this.players = newManager.players;
         this.players_movement = newManager.players_movement;
 
@@ -150,7 +151,12 @@ public class GameManager : MonoBehaviour
         this.projectileCam = newManager.projectileCam;
 
         this.turnDisplayText = newManager.turnDisplayText;
+
+        this.roulettePanel = newManager.roulettePanel;
         this.rouletteResultText = newManager.rouletteResultText;
+        this.announcementPanel = newManager.announcementPanel;
+        this.announcementText = newManager.announcementText;
+
         this.pauseMenuUI = newManager.pauseMenuUI;
         this.darkBackground = newManager.darkBackground;
 
@@ -161,8 +167,6 @@ public class GameManager : MonoBehaviour
         this.gameOverPanel = newManager.gameOverPanel;
         this.winnerText = newManager.winnerText;
 
-        // ★ [수정됨] 버튼 클릭 이벤트 자동 재연결
-        // 이전 매니저는 파괴되므로, 버튼이 살아남은 매니저(this)의 함수를 호출하도록 다시 연결합니다.
         if (this.nextPhaseButton != null)
         {
             Button btn = this.nextPhaseButton.GetComponentInChildren<Button>();
@@ -173,7 +177,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // 2. 변수 리셋
         score_player1 = 0;
         score_player2 = 0;
         playerInCaptureZone = 0;
@@ -184,17 +187,18 @@ public class GameManager : MonoBehaviour
         isPaused = false;
         isPhaseReady = false;
 
-        // 3. 시간 배율 초기화
         Time.timeScale = 1f;
 
-        // 4. 정리 및 재시작
         StopAllCoroutines();
 
         if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
         if (nextPhaseButton != null) nextPhaseButton.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
-        if (rouletteResultText != null) rouletteResultText.gameObject.SetActive(false);
         if (darkBackground != null) darkBackground.SetActive(false);
+
+        if (roulettePanel != null) roulettePanel.SetActive(false);
+        if (rouletteResultText != null) rouletteResultText.gameObject.SetActive(false);
+        if (announcementPanel != null) announcementPanel.SetActive(false);
 
         UpdateScoreUI();
         StartGameLogic();
@@ -248,6 +252,21 @@ public class GameManager : MonoBehaviour
         StartCoroutine(StartGameAfterDelay(1.0f));
     }
 
+    // 자동 안내 (필요시 사용)
+    IEnumerator ShowAnnouncement(string message, float duration)
+    {
+        if (announcementPanel == null) yield break;
+
+        if (announcementText != null)
+            announcementText.text = message;
+
+        announcementPanel.SetActive(true);
+
+        yield return new WaitForSeconds(duration);
+
+        announcementPanel.SetActive(false);
+    }
+
     IEnumerator PlayOpeningCommentarySequence()
     {
         if (announcerAudioSource != null && openingCommentary1 != null)
@@ -269,7 +288,6 @@ public class GameManager : MonoBehaviour
         dangtang = true;
         SetGameState(GameState.MakeGround);
 
-        // ★ [수정됨] ChangeWind() 대신 ResetWind()를 호출하여 바람을 0으로 만듭니다.
         if (WindController.instance != null)
         {
             WindController.instance.ResetWind();
@@ -286,20 +304,35 @@ public class GameManager : MonoBehaviour
             turnDisplayText.text = "전투 준비!";
         }
 
+        // ★ [수정] 각 플레이어 턴마다 안내 패널을 띄우고 버튼 입력을 대기합니다.
         foreach (var player in players)
         {
+            // 1. 안내 메시지 설정 ("Player1 우당탕탕 시작하기!" 등)
+            string msg = $"Player{player.playerID + 1} 우당탕탕 시작하기!";
+            if (announcementText != null) announcementText.text = msg;
+
+            // 2. 패널 및 버튼 활성화
+            if (announcementPanel != null) announcementPanel.SetActive(true);
+
             if (nextPhaseButton != null)
             {
                 nextPhaseButton.SetActive(true);
+                // 버튼 텍스트 설정 (예: "확인", "시작" 등. 여기서는 준비라는 텍스트를 사용하거나 그대로 둡니다)
                 TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
-                if (btnText != null) btnText.text = $"P{player.playerID + 1} 준비";
+                if (btnText != null) btnText.text = "시작";
 
-                // 버튼 누를 때까지 대기
+                // 3. 버튼 클릭 대기 (isPhaseReady가 true가 될 때까지)
                 isPhaseReady = false;
                 yield return new WaitUntil(() => isPhaseReady);
+
+                // 4. 대기 끝났으면 버튼 끄기
                 nextPhaseButton.SetActive(false);
             }
 
+            // 5. 패널 끄기 (이제 우당탕탕 진행)
+            if (announcementPanel != null) announcementPanel.SetActive(false);
+
+            // 6. 우당탕탕 진행
             player.MakeGround();
             yield return new WaitForSeconds(player.MakingGroundTime);
             yield return new WaitForSeconds(delay / 2);
@@ -313,6 +346,10 @@ public class GameManager : MonoBehaviour
 
         // ------------------------------------ 룰렛 및 진영 결정 ------------------------------------ 
 
+        // 룰렛 안내 메시지
+        StartCoroutine(ShowAnnouncement("진영 결정 룰렛!", 1.5f));
+        yield return new WaitForSeconds(1.5f);
+
         yield return StartCoroutine(PositionSwapRoulette());
 
         // ------------------------------------ 게임 시작 ------------------------------------ 
@@ -320,8 +357,9 @@ public class GameManager : MonoBehaviour
         dangtang = false;
         SetGameState(GameState.TurnEnd);
 
-        // ★ [확인] 실제 턴이 시작되기 직전, 첫 바람을 생성합니다.
-        // 이때는 이미 dangtang = false이므로 ChangeWind()가 정상 작동합니다.
+        // 게임 시작 메시지 (자동으로 사라짐)
+        StartCoroutine(ShowAnnouncement("게임 시작!", 2.0f));
+
         if (WindController.instance != null)
         {
             WindController.instance.ChangeWind();
@@ -368,6 +406,7 @@ public class GameManager : MonoBehaviour
         float interval = 0.1f;
         bool toggle = false;
 
+        if (roulettePanel != null) roulettePanel.SetActive(true);
         if (rouletteResultText != null)
         {
             rouletteResultText.gameObject.SetActive(true);
@@ -385,15 +424,22 @@ public class GameManager : MonoBehaviour
                     rouletteResultText.text = "진영 교체\n<size=80%>Position SWAP</size>";
             }
 
-            if (announcerAudioSource != null && rouletteSpinSFX != null)
+            // 틱 소리 재생 (Pitch 변조)
+            if (announcerAudioSource != null && rouletteTickSFX != null)
             {
-                announcerAudioSource.PlayOneShot(rouletteSpinSFX);
+                announcerAudioSource.pitch = Random.Range(0.9f, 1.1f);
+                announcerAudioSource.PlayOneShot(rouletteTickSFX);
             }
 
             yield return new WaitForSeconds(interval);
 
             timer += interval;
             interval += 0.02f;
+        }
+
+        if (announcerAudioSource != null)
+        {
+            announcerAudioSource.pitch = 1.0f;
         }
 
         if (announcerAudioSource != null && rouletteDecideSFX != null)
@@ -448,8 +494,9 @@ public class GameManager : MonoBehaviour
         {
             rouletteResultText.gameObject.SetActive(false);
         }
+        if (roulettePanel != null) roulettePanel.SetActive(false);
 
-        // ★ [수정됨] 버튼이 있을 때만 대기
+
         if (nextPhaseButton != null)
         {
             nextPhaseButton.SetActive(true);
