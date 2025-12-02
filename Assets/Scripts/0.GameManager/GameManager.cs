@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     public List<PlayerMovement> players_movement;
     public int currentPlayerIndex = 0;
 
-    [Header("중계 오디오 설정")]
+    [Header("중계 오디오 설정 (Voice)")]
     public AudioSource announcerAudioSource;
     public AudioClip openingCommentary1;
     public AudioClip openingCommentary2;
@@ -23,6 +23,9 @@ public class GameManager : MonoBehaviour
     public AudioClip pointCommentary;
     public AudioClip p2Commentary;
     public AudioClip NpCommentary;
+
+    [Header("효과음 오디오 설정 (SFX)")] // ★ [추가] SFX 전용 오디오 소스
+    public AudioSource sfxAudioSource;
 
     [Header("룰렛 연출 오디오")]
     public AudioClip rouletteTickSFX;
@@ -47,6 +50,7 @@ public class GameManager : MonoBehaviour
     public GameObject announcementPanel;
     public TextMeshProUGUI announcementText;
 
+    public TextMeshProUGUI NextPhaseText;
     public GameObject pauseMenuUI;
     public GameObject darkBackground;
     public TextMeshProUGUI scoreTextP1;
@@ -144,6 +148,8 @@ public class GameManager : MonoBehaviour
         this.players_movement = newManager.players_movement;
 
         this.announcerAudioSource = newManager.announcerAudioSource;
+        // ★ [추가] SFX 오디오 소스 연결
+        this.sfxAudioSource = newManager.sfxAudioSource;
         this.BGMAudioSource = newManager.BGMAudioSource;
 
         this.mainCameraController = newManager.mainCameraController;
@@ -252,7 +258,6 @@ public class GameManager : MonoBehaviour
         StartCoroutine(StartGameAfterDelay(1.0f));
     }
 
-    // 자동 안내 (필요시 사용)
     IEnumerator ShowAnnouncement(string message, float duration)
     {
         if (announcementPanel == null) yield break;
@@ -304,35 +309,27 @@ public class GameManager : MonoBehaviour
             turnDisplayText.text = "전투 준비!";
         }
 
-        // ★ [수정] 각 플레이어 턴마다 안내 패널을 띄우고 버튼 입력을 대기합니다.
         foreach (var player in players)
         {
-            // 1. 안내 메시지 설정 ("Player1 우당탕탕 시작하기!" 등)
             string msg = $"Player{player.playerID + 1} 우당탕탕 시작하기!";
             if (announcementText != null) announcementText.text = msg;
 
-            // 2. 패널 및 버튼 활성화
             if (announcementPanel != null) announcementPanel.SetActive(true);
 
             if (nextPhaseButton != null)
             {
                 nextPhaseButton.SetActive(true);
-                // 버튼 텍스트 설정 (예: "확인", "시작" 등. 여기서는 준비라는 텍스트를 사용하거나 그대로 둡니다)
                 TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (btnText != null) btnText.text = "시작";
 
-                // 3. 버튼 클릭 대기 (isPhaseReady가 true가 될 때까지)
                 isPhaseReady = false;
                 yield return new WaitUntil(() => isPhaseReady);
 
-                // 4. 대기 끝났으면 버튼 끄기
                 nextPhaseButton.SetActive(false);
             }
 
-            // 5. 패널 끄기 (이제 우당탕탕 진행)
             if (announcementPanel != null) announcementPanel.SetActive(false);
 
-            // 6. 우당탕탕 진행
             player.MakeGround();
             yield return new WaitForSeconds(player.MakingGroundTime);
             yield return new WaitForSeconds(delay / 2);
@@ -346,7 +343,6 @@ public class GameManager : MonoBehaviour
 
         // ------------------------------------ 룰렛 및 진영 결정 ------------------------------------ 
 
-        // 룰렛 안내 메시지
         StartCoroutine(ShowAnnouncement("진영 결정 룰렛!", 1.5f));
         yield return new WaitForSeconds(1.5f);
 
@@ -357,8 +353,21 @@ public class GameManager : MonoBehaviour
         dangtang = false;
         SetGameState(GameState.TurnEnd);
 
-        // 게임 시작 메시지 (자동으로 사라짐)
-        StartCoroutine(ShowAnnouncement("게임 시작!", 2.0f));
+        if (announcementText != null) announcementText.text = "게임 시작!";
+        if (announcementPanel != null) announcementPanel.SetActive(true);
+
+        if (nextPhaseButton != null)
+        {
+            nextPhaseButton.SetActive(true);
+            TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (btnText != null) btnText.text = "Game Start!";
+
+            isPhaseReady = false;
+            yield return new WaitUntil(() => isPhaseReady);
+            nextPhaseButton.SetActive(false);
+        }
+
+        if (announcementPanel != null) announcementPanel.SetActive(false);
 
         if (WindController.instance != null)
         {
@@ -424,11 +433,11 @@ public class GameManager : MonoBehaviour
                     rouletteResultText.text = "진영 교체\n<size=80%>Position SWAP</size>";
             }
 
-            // 틱 소리 재생 (Pitch 변조)
-            if (announcerAudioSource != null && rouletteTickSFX != null)
+            // ★ [수정] sfxAudioSource를 사용하여 틱 소리 재생
+            if (sfxAudioSource != null && rouletteTickSFX != null)
             {
-                announcerAudioSource.pitch = Random.Range(0.9f, 1.1f);
-                announcerAudioSource.PlayOneShot(rouletteTickSFX);
+                sfxAudioSource.pitch = Random.Range(0.9f, 1.1f);
+                sfxAudioSource.PlayOneShot(rouletteTickSFX);
             }
 
             yield return new WaitForSeconds(interval);
@@ -437,14 +446,16 @@ public class GameManager : MonoBehaviour
             interval += 0.02f;
         }
 
-        if (announcerAudioSource != null)
+        // ★ [수정] sfxAudioSource의 Pitch 복구
+        if (sfxAudioSource != null)
         {
-            announcerAudioSource.pitch = 1.0f;
+            sfxAudioSource.pitch = 1.0f;
         }
 
-        if (announcerAudioSource != null && rouletteDecideSFX != null)
+        // ★ [수정] 결정음도 SFX로 재생
+        if (sfxAudioSource != null && rouletteDecideSFX != null)
         {
-            announcerAudioSource.PlayOneShot(rouletteDecideSFX);
+            sfxAudioSource.PlayOneShot(rouletteDecideSFX);
         }
 
         if (doSwap)
@@ -495,18 +506,6 @@ public class GameManager : MonoBehaviour
             rouletteResultText.gameObject.SetActive(false);
         }
         if (roulettePanel != null) roulettePanel.SetActive(false);
-
-
-        if (nextPhaseButton != null)
-        {
-            nextPhaseButton.SetActive(true);
-            TextMeshProUGUI btnText = nextPhaseButton.GetComponentInChildren<TextMeshProUGUI>();
-            if (btnText != null) btnText.text = "Game Start!";
-
-            isPhaseReady = false;
-            yield return new WaitUntil(() => isPhaseReady);
-            nextPhaseButton.SetActive(false);
-        }
     }
 
     public void OnNextPhaseButtonClicked()

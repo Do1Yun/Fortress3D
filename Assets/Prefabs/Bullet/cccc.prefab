@@ -89,7 +89,7 @@ MonoBehaviour:
   terrainEffectDuration: 0.5
   terrainEffectSteps: 10
   movementClip: {fileID: 8300000, guid: c6466400ac5eeec4db15d5c6f771690a, type: 3}
-  volume: 1
+  volume: 0.667
   minDistance: 100
   maxDistance: 500
   basePitch: 1
