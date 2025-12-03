@@ -21,7 +21,11 @@ public class Projectile : MonoBehaviour
     [Header("타입별 설정")]
     public float terrainModificationStrength = 2.0f;
     public float explosionForce = 500f;
-    public float playerKnockbackForce = 20f;
+    public float playerKnockbackForce = 50f;
+
+    [Header("인력/척력탄 전용 설정")]
+    public float pushPullRangeMultiplier = 1.5f;
+
     [Header("오디오 설정")]
   
     public AudioClip TerrainPushCommentary;     // 두 번째 멘트 파일
@@ -79,7 +83,10 @@ public class Projectile : MonoBehaviour
         if (gameManager.players != null && gameManager.players.Count > 0)
         {
             explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
-
+            if (type == ProjectileType.TerrainPush || type == ProjectileType.TerrainPull)
+            {
+                explosionRadius *= pushPullRangeMultiplier;
+            }
             if (explosionEffectPrefab != null)
             {
                 // 폭발 반경에 따라 이펙트 크기 조절

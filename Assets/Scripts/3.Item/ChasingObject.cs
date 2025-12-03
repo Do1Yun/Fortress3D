@@ -45,7 +45,8 @@ public class ChasingObject : MonoBehaviour
     public float terrainEffectDuration = 2.0f;
     [Tooltip("지형 효과를 몇 단계로 나눌지")]
     public int terrainEffectSteps = 10;
-
+    [Header("인력/척력탄 전용 설정")]
+    public float pushPullRangeMultiplier = 1.5f;
     // --- [수정] 오디오 관련 설정 ---
     [Header("오디오 설정")]
     public AudioClip movementClip;
@@ -116,6 +117,10 @@ public class ChasingObject : MonoBehaviour
         // 수정 - 1120 by lee
         explosionEffectPrefab = (type == ProjectileType.TerrainPull || type == ProjectileType.TerrainPush) ? explosionEffectPrefab1 : explosionEffectPrefab2;
         explosionRadius = gameManager.players[gameManager.currentPlayerIndex].ExplosionRange;
+        if (this.explosionType == ProjectileType.TerrainPush || this.explosionType == ProjectileType.TerrainPull)
+        {
+            explosionRadius *= pushPullRangeMultiplier;
+        }
         scale = explosionRadius / gameManager.players[gameManager.currentPlayerIndex].BasicExplosionRange;
 
         if (explosionEffectPrefab.transform.childCount > 1) explosionEffectPrefab.transform.localScale *= scale;
