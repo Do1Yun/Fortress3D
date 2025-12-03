@@ -277,7 +277,7 @@ MonoBehaviour:
   itemtype: 0
   itemIcon: {fileID: 0}
   itemCommentary: {fileID: 8300000, guid: e37683a1df0aec044995cebc8bcec3ce, type: 3}
-  hitSound: {fileID: 8300000, guid: af66162561d2eed40ad49268cab318bb, type: 3}
+  hitSound: {fileID: 8300000, guid: 45c4c10930760d644957a6bfccd79e19, type: 3}
   minVelocity: 0.1
 --- !u!54 &-2922027638079948656
 Rigidbody:
