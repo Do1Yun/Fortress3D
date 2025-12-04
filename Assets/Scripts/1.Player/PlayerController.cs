@@ -21,16 +21,23 @@ public class PlayerController : MonoBehaviour
     public int playerID;
     public int rerollChances = 3;
 
-    [Header("UI 연결 (이 플레이어 전용)")]
+    [Header("UI 연결 (일반 턴 전용)")]
     public Image staminaImage;
     public Image powerImage;
     public TextMeshProUGUI powerText;
     public TextMeshProUGUI statusText;
-    public TextMeshProUGUI timerText;
-    public Image timerImage;
+    public TextMeshProUGUI timerText; // 일반 턴 타이머 텍스트
+    public Image timerImage;          // 일반 턴 타이머 이미지
     public List<Image> projectileSlotImages;
     public TextMeshProUGUI rerollCountText;
     public List<Image> itemSlotImages;
+
+    // ▼▼▼ [새로 추가됨] 우당탕탕 전용 UI 분리 ▼▼▼
+    [Header("우당탕탕 전용 UI")]
+    public GameObject mg_UIPanel;        // 우당탕탕 UI 전체를 감싸는 부모 오브젝트 (패널)
+    public Image mg_TimerImage;          // 우당탕탕 전용 줄어드는 게이지
+    public TextMeshProUGUI mg_TimerText; // 우당탕탕 전용 시간 텍스트
+    // ▲▲▲ [여기까지 추가] ▲▲▲
 
     [Header("상태별 UI 설정")]
     public List<UITweener> allManagedTweeners;
@@ -52,7 +59,6 @@ public class PlayerController : MonoBehaviour
     public AudioClip commentItemTurnOff;
     public AudioClip commentItemChasing;
 
-    // ★ [추가] 효과음(SFX) 설정
     [Header("효과음 설정 (SFX)")]
     [Tooltip("아이템 사용 시 재생할 소리")]
     public AudioClip itemUseSFX;
@@ -97,7 +103,6 @@ public class PlayerController : MonoBehaviour
     public Camera mainCamera;
 
     [Header("특수탄 설정")]
-    public KeyCode chaserModeKey = KeyCode.M;
     [HideInInspector] public bool isNextShotChaser = false;
 
     private float currentStageTimer = 5.0f;
@@ -136,6 +141,10 @@ public class PlayerController : MonoBehaviour
         {
             mainCamera = Camera.main;
         }
+
+        // 시작 시 우당탕탕 UI는 꺼두기
+        if (mg_UIPanel != null) mg_UIPanel.SetActive(false);
+
         UpdateItemSelectionUI();
     }
 
@@ -168,8 +177,18 @@ public class PlayerController : MonoBehaviour
 
             case PlayerState.MakingGround:
                 currentStageTimer -= Time.deltaTime;
-                if (timerText != null) timerText.text = $"{currentStageTimer:F1}";
-                if (timerImage != null) timerImage.fillAmount = currentStageTimer / MakingGroundTime;
+
+                // ▼▼▼ [수정됨] 우당탕탕 전용 UI 사용 ▼▼▼
+                if (mg_TimerText != null)
+                {
+                    mg_TimerText.text = $"{Mathf.Max(0, currentStageTimer):F1}초";
+                }
+
+                if (mg_TimerImage != null)
+                {
+                    mg_TimerImage.fillAmount = currentStageTimer / MakingGroundTime;
+                }
+                // ▲▲▲ [여기까지 수정] ▲▲▲
 
                 if (currentStageTimer <= 0f)
                 {
@@ -193,9 +212,7 @@ public class PlayerController : MonoBehaviour
                     if (!hasPlayedStaminaCommentary)
                     {
                         hasPlayedStaminaCommentary = true;
-
                         Debug.Log($"[LOG] Player {playerID}: 기동력 소진 상황 발생!");
-
                         if (Random.value <= 1.0f)
                         {
                             TriggerCommentary(staminaDepletedCommentary1, staminaDepletedCommentary2);
@@ -214,6 +231,8 @@ public class PlayerController : MonoBehaviour
             case PlayerState.AimingHorizontal:
             case PlayerState.SettingPower:
                 currentStageTimer -= Time.deltaTime;
+
+                // 기존 일반 턴 UI 사용
                 if (timerText != null) timerText.text = $"{currentStageTimer:F1} / {stageTimeLimit:F1}";
                 if (timerImage != null) timerImage.fillAmount = currentStageTimer / stageTimeLimit;
 
@@ -291,7 +310,6 @@ public class PlayerController : MonoBehaviour
         currentStageTimer = stageTimeLimit;
         SetPlayerState(PlayerState.Moving);
         Debug.Log($"======== PLAYER {playerID} TURN START (타이머: {currentStageTimer}) ========");
-
         Debug.Log($"[LOG] Player {playerID}: 이동 시작 상황 발생!");
 
         if (Random.value <= 0.2f)
@@ -313,12 +331,10 @@ public class PlayerController : MonoBehaviour
         {
             StopCoroutine(activeCommentaryCoroutine);
         }
-
         if (GameManager.instance != null && GameManager.instance.announcerAudioSource != null)
         {
             GameManager.instance.announcerAudioSource.Stop();
         }
-
         activeCommentaryCoroutine = StartCoroutine(PlayCommentarySequence(clip1, clip2));
     }
 
@@ -343,7 +359,6 @@ public class PlayerController : MonoBehaviour
             announcer.PlayOneShot(clip2);
             yield return new WaitForSecondsRealtime(clip2.length);
         }
-
         activeCommentaryCoroutine = null;
     }
 
@@ -420,12 +435,10 @@ public class PlayerController : MonoBehaviour
                 SetPlayerState(PlayerState.SettingPower);
                 break;
             case PlayerState.SettingPower:
-                // ★ [추가] 발사 효과음 재생
                 if (gameManager != null && gameManager.sfxAudioSource != null && fireSFX != null)
                 {
                     gameManager.sfxAudioSource.PlayOneShot(fireSFX);
                 }
-
                 playerShooting.Fire();
                 SetPlayerState(PlayerState.Firing);
                 break;
@@ -434,7 +447,6 @@ public class PlayerController : MonoBehaviour
 
     void HandleProjectileSelection()
     {
-
         if (Input.GetKeyDown(KeyCode.Alpha1)) SelectProjectile(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SelectProjectile(1);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SelectProjectile(2);
@@ -467,7 +479,6 @@ public class PlayerController : MonoBehaviour
         {
             Debug.Log($"Player {playerID} Projectile Selection Generated: [1] {currentSelection[0].type}, [2] {currentSelection[1].type}, [3] {currentSelection[2].type}");
         }
-
         UpdateProjectileSelectionUI();
     }
 
@@ -475,14 +486,12 @@ public class PlayerController : MonoBehaviour
     {
         if (index < 0 || index >= currentSelection.Count) return;
 
-        // ★ [추가] 포탄 선택 효과음 재생
         if (gameManager != null && gameManager.sfxAudioSource != null && projectileSelectSFX != null)
         {
             gameManager.sfxAudioSource.PlayOneShot(projectileSelectSFX);
         }
 
         selectedProjectile = currentSelection[index];
-
         string prefabName = (selectedProjectile.prefab != null) ? selectedProjectile.prefab.name : "NULL";
         Debug.Log($"[ACTION] Player {playerID} selected index {index} -> Projectile: {selectedProjectile.type}, Setting Prefab: {prefabName}");
 
@@ -515,9 +524,20 @@ public class PlayerController : MonoBehaviour
 
     void UpdateUIForState(PlayerState state)
     {
+        // 1. 우당탕탕 UI 제어
+        if (mg_UIPanel != null)
+        {
+            // MakingGround 상태일 때만 켜고, 나머지는 끈다
+            bool isMG = (state == PlayerState.MakingGround);
+            mg_UIPanel.SetActive(isMG);
+        }
+
+        // 2. 일반 UI 제어
         if (statusText != null)
         {
+            // 우당탕탕 상태가 아닐 때만 StatusText를 켠다 (필요시 수정 가능)
             statusText.gameObject.SetActive(true);
+
             switch (state)
             {
                 case PlayerState.Moving:
@@ -525,27 +545,43 @@ public class PlayerController : MonoBehaviour
                     staminaImage.gameObject.SetActive(true);
                     powerText.gameObject.SetActive(false);
                     powerImage.gameObject.SetActive(false);
-                    timerImage.gameObject.SetActive(false);
-                    timerText.gameObject.SetActive(false);
+                    if (timerImage) timerImage.gameObject.SetActive(false);
+                    if (timerText) timerText.gameObject.SetActive(false);
                     break;
+
                 case PlayerState.SelectingProjectile:
                     statusText.text = "탄 선택 모드";
                     staminaImage.gameObject.SetActive(false);
                     powerText.gameObject.SetActive(true);
                     powerImage.gameObject.SetActive(true);
-                    timerImage.gameObject.SetActive(true);
-                    timerText.gameObject.SetActive(true);
+                    if (timerImage) timerImage.gameObject.SetActive(true);
+                    if (timerText) timerText.gameObject.SetActive(true);
                     break;
+
                 case PlayerState.AimingVertical: statusText.text = "수직 조준"; break;
                 case PlayerState.AimingHorizontal: statusText.text = "수평 조준"; break;
                 case PlayerState.SettingPower: statusText.text = "파워 조절"; break;
                 case PlayerState.Waiting:
                 case PlayerState.Firing: statusText.text = "대기중..."; break;
-                case PlayerState.MakingGround: statusText.text = "우당탕탕!"; break;
+
+                // ▼▼▼ [수정됨] 우당탕탕일 때 일반 UI 다 끄기 ▼▼▼
+                case PlayerState.MakingGround:
+                    statusText.text = "우당탕탕!";
+
+                    // 일반 UI 숨김 (우당탕탕 전용 UI가 mg_UIPanel로 켜짐)
+                    if (staminaImage) staminaImage.gameObject.SetActive(false);
+                    if (powerText) powerText.gameObject.SetActive(false);
+                    if (powerImage) powerImage.gameObject.SetActive(false);
+                    if (timerImage) timerImage.gameObject.SetActive(false);
+                    if (timerText) timerText.gameObject.SetActive(false);
+                    break;
+                // ▲▲▲ [여기까지 수정] ▲▲▲
+
                 default: statusText.text = state.ToString(); break;
             }
         }
 
+        // 3. Tween UI 제어
         UIStateSettings currentSettings = uiStateSettings.Find(s => s.state == state);
         List<UITweener> tweenersToShow = (currentSettings != null) ? currentSettings.activeTweeners : new List<UITweener>();
 
@@ -566,6 +602,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // ... (이하 기존 함수들 동일)
     public bool IsAimingOrSettingPower()
     {
         return currentState == PlayerState.AimingVertical ||
@@ -595,7 +632,6 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // ★ [추가] 아이템 사용 효과음 재생
         if (gameManager != null && gameManager.sfxAudioSource != null && itemUseSFX != null)
         {
             gameManager.sfxAudioSource.PlayOneShot(itemUseSFX);
@@ -622,10 +658,8 @@ public class PlayerController : MonoBehaviour
                     {
                         gameManager.announcerAudioSource.Stop();
                         gameManager.announcerAudioSource.PlayOneShot(commentItemstamina);
-                        Debug.Log("아이템 사용 멘트 재생!");
                     }
                 }
-
                 playerMovement.speedMultiplier *= 1.5f;
                 break;
 
@@ -636,10 +670,8 @@ public class PlayerController : MonoBehaviour
                     {
                         gameManager.announcerAudioSource.Stop();
                         gameManager.announcerAudioSource.PlayOneShot(commentItem2x);
-                        Debug.Log("아이템 획득 멘트 재생!");
                     }
                 }
-
                 Player.ExplosionRange *= 1.5f;
                 break;
 
@@ -650,7 +682,6 @@ public class PlayerController : MonoBehaviour
                     {
                         gameManager.announcerAudioSource.Stop();
                         gameManager.announcerAudioSource.PlayOneShot(commentItemTurnOff);
-                        Debug.Log("아이템 획득 멘트 재생!");
                     }
                 }
                 nextPlayer.trajectory.isPainted = false;
@@ -662,10 +693,8 @@ public class PlayerController : MonoBehaviour
                     {
                         gameManager.announcerAudioSource.Stop();
                         gameManager.announcerAudioSource.PlayOneShot(commentItemChasing);
-                        Debug.Log("아이템 획득 멘트 재생!");
                     }
                 }
-
                 using_chasingItem = true;
                 break;
         }
@@ -710,7 +739,6 @@ public class PlayerController : MonoBehaviour
         {
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
-
             if (Physics.Raycast(ray, out hit))
             {
                 Vector3 groundPoint = hit.point;
@@ -723,7 +751,6 @@ public class PlayerController : MonoBehaviour
         {
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
-
             if (Physics.Raycast(ray, out hit))
             {
                 Vector3 groundPoint = hit.point;
