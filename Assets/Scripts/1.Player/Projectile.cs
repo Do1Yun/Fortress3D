@@ -24,10 +24,11 @@ public class Projectile : MonoBehaviour
     public float playerKnockbackForce = 20f;
     public float pushPullRangeMultiplier = 1.5f;
     [Header("오디오 설정")]
-    // ▼▼▼ [1. 추가됨] 폭발 효과음 변수 추가 ▼▼▼
     [Tooltip("착탄(폭발) 시 재생할 효과음")]
+
     public AudioClip explosionSound;
-    // ▲▲▲ [여기까지 추가] ▲▲▲
+    [Range(0f, 1f)]
+    public float explosionVolume = 1.0f;
 
     public AudioClip TerrainPushCommentary;     // 두 번째 멘트 파일
     public AudioClip TerrainPullCommentary;
@@ -121,13 +122,10 @@ public class Projectile : MonoBehaviour
 
         Debug.LogFormat("'{0}' 포탄 폭발! 위치: {1}", type, explosionPosition);
 
-        // ▼▼▼ [2. 추가됨] 폭발 사운드 재생 로직 ▼▼▼
         if (gameManager != null && gameManager.sfxAudioSource != null && explosionSound != null)
         {
-            // 포탄이 사라져도 소리가 끊기지 않도록 GameManager의 AudioSource를 사용합니다.
-            gameManager.sfxAudioSource.PlayOneShot(explosionSound);
+            gameManager.sfxAudioSource.PlayOneShot(explosionSound, explosionVolume);
         }
-        // ▲▲▲ [여기까지 추가] ▲▲▲
 
         if (explosionEffectPrefab != null)
         {

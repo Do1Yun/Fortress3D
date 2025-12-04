@@ -136,5 +136,6 @@ MonoBehaviour:
   playerKnockbackForce: 40
   pushPullRangeMultiplier: 1.5
   explosionSound: {fileID: 8300000, guid: 07a627256bfe88f46aec5cd1b02b882d, type: 3}
+  explosionVolume: 0.2
   TerrainPushCommentary: {fileID: 0}
   TerrainPullCommentary: {fileID: 8300000, guid: 2607b60ab9bf1294194568822305f676, type: 3}

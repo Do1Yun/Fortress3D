@@ -11,7 +11,7 @@ public class LoadManager : MonoBehaviour
     }
     public void GameStart()
     {
-        SceneManager.LoadScene("Do1 Test");
+        SceneManager.LoadScene("MainScene");
     }
 
     public void StartScene()
