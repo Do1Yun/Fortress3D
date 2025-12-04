@@ -727,7 +727,7 @@ public class GameManager : MonoBehaviour
         //SwitchToNextTurn();
         //매치포인트에서 척력탄으로 밀어내기해도 점수먹는 문제 해결
 
-        StartCoroutine(DelayedTurnEnd(1.0f));
+        StartCoroutine(DelayedTurnEnd(3.0f));
     }
     IEnumerator DelayedTurnEnd(float delay)
     {

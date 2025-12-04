@@ -831,21 +831,26 @@ MonoBehaviour:
   mainVideoPlayer: {fileID: 345530682}
   descriptionText: {fileID: 1559237024}
   videoClips:
-  - {fileID: 32900000, guid: 4058e4ac646615b4e8afcc9f46ba736b, type: 3}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 32900000, guid: ad44defe399ea7d4a91668b2c982a0e3, type: 3}
+  - {fileID: 32900000, guid: 711e974695242c540ad149446c964b96, type: 3}
+  - {fileID: 32900000, guid: ce91ce8e70e1999489484ad32da9b2b5, type: 3}
+  - {fileID: 32900000, guid: d95e5b6920803ca41bcb358226d710a9, type: 3}
+  - {fileID: 32900000, guid: c241d17e001b73a42b2b4d2baec6f924, type: 3}
   videoDescriptions:
   - "\uC88C\uD074\uB9AD : \uC9C0\uD615 \uC0DD\uC131 || \uC6B0\uD074\uB9AD : \uC9C0\uD615
-    \uC0AD\uC81C"
-  - "\uC774\uB3D9 \uD0A4 : WASD || \uC544\uC774\uD15C \uC0AC\uC6A9 : 1,2,3\n\uC544\uC774\uD15C\uC740
-    \uC774\uB3D9 \uC0C1\uD0DC\uC5D0\uC11C\uB9CC \uC0AC\uC6A9 \uAC00\uB2A5!"
-  - "\uB2E4\uC74C \uB2E8\uACC4 : SPACE || \uD3EC\uD0C4 \uC120\uD0DD : 1,2,3\n\uC218\uC9C1\uC870\uC900
-    \uD0A4 : I,K || \uC218\uD3C9 \uC870\uC900 \uD0A4 : J,L"
-  - "\uC544\uC774\uD15C"
+    \uC0AD\uC81C\n10\uCD08\uAC04 \uC6D0\uD558\uB294\uB300\uB85C \uC9C0\uD615\uC744
+    \uBC14\uAFD4\uBCF4\uC138\uC694!"
+  - "\uC774\uB3D9 \uD0A4 : WASD\n\uC2A4\uD14C\uBBF8\uB108\uAC00 \uB5A8\uC5B4\uC9C0\uBA74
+    \uC774\uB3D9 \uBD88\uB2A5"
+  - "\uD3EC\uD0C4 \uC120\uD0DD : 1,2,3 || \uB2E4\uC74C \uB2E8\uACC4, \uBC1C\uC0AC
+    : SPACE \n\uC218\uC9C1 \uC870\uC900 \uD0A4 : I,K || \uC218\uD3C9 \uC870\uC900
+    \uD0A4 : J,L"
+  - "\uC544\uC774\uD15C \uC0AC\uC6A9 : 1,2,3 || \uC544\uC774\uD15C\uC740 \uC774\uB3D9
+    \uC0C1\uD0DC\uC5D0\uC11C\uB9CC \uC120\uD0DD \uAC00\uB2A5!\n\uAE30\uB2A5\uC740
+    \uC9C1\uC811 \uC0AC\uC6A9\uD574\uC11C \uD655\uC778\uD574\uBCF4\uC138\uC694!"
   - "\uB9F5 \uC911\uC559 \uC810\uB839\uC9C0\uC5D0\uC11C \uD640\uB85C 3\uD134\uC744
-    \uBC84\uD2F0\uBA74 \uC2B9\uB9AC!"
+    \uBC84\uD2F0\uBA74 \uC2B9\uB9AC!\n\uB450 \uD50C\uB808\uC774\uC5B4\uAC00 \uD568\uAED8
+    \uC788\uC744 \uACBD\uC6B0 \uC810\uC218\uB294 \uCD94\uAC00\uB418\uC9C0 \uC54A\uC74C"
 --- !u!328 &345530682
 VideoPlayer:
   m_ObjectHideFlags: 0
