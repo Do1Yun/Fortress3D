@@ -724,8 +724,19 @@ public class GameManager : MonoBehaviour
             projectileCam.StartDeactivationDelay(1.0f);
         }
 
+        //SwitchToNextTurn();
+        //매치포인트에서 척력탄으로 밀어내기해도 점수먹는 문제 해결
+
+        StartCoroutine(DelayedTurnEnd(1.0f));
+    }
+    IEnumerator DelayedTurnEnd(float delay)
+    {
+        // 지정된 시간만큼 대기. 
+        yield return new WaitForSeconds(delay);
+        // 대기 후 턴 종료 및 점수 계산 실행
         SwitchToNextTurn();
     }
+
 
     void Item_Reset()
     {
